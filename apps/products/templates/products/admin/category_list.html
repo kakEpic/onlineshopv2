@@ -1,0 +1,100 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Categories{% endblock %}
+
+{% block content %}
+<!-- Dashboard Header -->
+<div class="dashboard-header">
+    <div>
+        <h1 class="dashboard-title"><i class="bi bi-folder me-2"></i>Categories</h1>
+        <p class="dashboard-subtitle">Organize your products by category</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'products:dashboard_category_add' %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-2"></i>Add Category
+        </a>
+        <a href="{% url 'products:dashboard_list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-2"></i>Back to Products
+        </a>
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="stats-grid mb-4">
+    <div class="stat-card">
+        <div class="icon-box primary">
+            <i class="bi bi-folder"></i>
+        </div>
+        <div>
+            <div class="stat-value">{{ categories|length }}</div>
+            <div class="stat-label">Total Categories</div>
+        </div>
+    </div>
+</div>
+
+<!-- Categories Table -->
+<div class="data-card">
+    <div class="data-card-header">
+        <span class="data-card-title">
+            <i class="bi bi-list-ul me-2"></i>All Categories
+        </span>
+    </div>
+    
+    {% if categories %}
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th style="width: 80px;">ID</th>
+                    <th>Category Name</th>
+                    <th>Products</th>
+                    <th style="width: 150px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for category in categories %}
+                <tr class="animate-fade-in" style="animation-delay: {{ forloop.counter0 }}0ms;">
+                    <td>
+                        <span class="badge bg-light text-dark">#{{ category.id }}</span>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center" 
+                                 style="width: 40px; height: 40px;">
+                                <i class="bi bi-folder text-primary"></i>
+                            </div>
+                            <strong>{{ category.name }}</strong>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge bg-primary">{{ category.products.count }} products</span>
+                    </td>
+                    <td>
+                        <div class="d-flex gap-2">
+                            <a href="{% url 'products:dashboard_category_edit' category.pk %}" class="btn btn-icon edit" title="Edit">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <a href="{% url 'products:dashboard_category_delete' category.pk %}" class="btn btn-icon delete" title="Delete">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <!-- Empty State -->
+    <div class="empty-state">
+        <i class="bi bi-folder-plus"></i>
+        <h3>No categories yet</h3>
+        <p>Create your first category to organize products.</p>
+        <a href="{% url 'products:dashboard_category_add' %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-2"></i>Add Category
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

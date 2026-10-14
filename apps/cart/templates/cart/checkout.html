@@ -1,0 +1,154 @@
+{% extends 'client/base_client.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "ពិនិត្យឡើងវិញ" %}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="h3 mb-4">
+        <i class="bi bi-bag-check me-2"></i>{% trans "ពិនិត្យឡើងវិញ" %}
+    </h1>
+
+    <form method="post" id="checkout-form">
+        {% csrf_token %}
+        <div class="row">
+            <!-- Customer Information -->
+            <div class="col-lg-7">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            {% if is_guest %}
+                            <i class="bi bi-person me-2"></i>{% trans "ព័ត៌មានអតិថិជន" %}
+                            {% else %}
+                            <i class="bi bi-truck me-2"></i>{% trans "ព័ត៌មានការដឹកជញ្ជូន" %}
+                            {% endif %}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if is_guest %}
+                        <!-- Guest checkout form -->
+                        <div class="mb-3">
+                            <label for="id_name" class="form-label">{% trans "ឈ្មោះ" %} <span class="text-danger">*</span></label>
+                            {{ form.name }}
+                            {% if form.name.errors %}
+                            <div class="invalid-feedback d-block">{{ form.name.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="id_phone" class="form-label">{% trans "ទូរសព្ទ" %} <span class="text-danger">*</span></label>
+                                {{ form.phone }}
+                                {% if form.phone.errors %}
+                                <div class="invalid-feedback d-block">{{ form.phone.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="id_telegram_phone" class="form-label">{% trans "តេលេក្រាម" %}</label>
+                                {{ form.telegram_phone }}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_address" class="form-label">{% trans "អាសយដ្ឋានដឹកជញ្ជូន" %} <span class="text-danger">*</span></label>
+                            {{ form.address }}
+                            {% if form.address.errors %}
+                            <div class="invalid-feedback d-block">{{ form.address.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_note" class="form-label">{% trans "ចំណាយការបញ្ជាក់" %}</label>
+                            {{ form.note }}
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            {% trans "មានគណនីរួចរាល់?" %}
+                            <a href="{% url 'accounts:login' %}?next={% url 'cart:checkout' %}">{% trans "ចូល" %}</a>
+                            {% trans "សម្រាប់ការបញ្ជាទិញលឿន និងមានប្រវត្តិការបញ្ជាទិញ" %}
+                        </div>
+
+                        {% else %}
+                        <!-- Registered user checkout -->
+                        <div class="alert alert-success mb-4">
+                            <i class="bi bi-check-circle me-2"></i>
+                            {% trans "Logged in as" %}: <strong>{{ user.username }}</strong>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_shipping_address" class="form-label">{% trans "អាសយដ្ឋានដឹកជញ្ជូន" %} <span class="text-danger">*</span></label>
+                            {{ form.shipping_address }}
+                            {% if form.shipping_address.errors %}
+                            <div class="invalid-feedback d-block">{{ form.shipping_address.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_note" class="form-label">{% trans "ចំណាយការបញ្ជាក់" %}</label>
+                            {{ form.note }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Summary -->
+            <div class="col-lg-5">
+                <div class="card shadow-sm ">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="bi bi-receipt me-2"></i>{% trans "សង្ខេបការបញ្ជាទិញ" %}</h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Order Items -->
+                        <div class="mb-3" style="max-height: 300px; overflow-y: auto;">
+                            {% for item in cart_items %}
+                            <div class="d-flex justify-content-between align-items-start mb-2 pb-2 border-bottom">
+                                <div class="d-flex">
+                                    {% if item.product.cover_thumbnail_url %}
+                                    <img src="{{ item.product.cover_thumbnail_url }}"
+                                         alt="{{ item.product.name }}"
+                                         class="rounded me-2"
+                                         style="width: 50px; height: 50px; object-fit: cover;">
+                                    {% elif item.product.cover_image %}
+                                    <img src="{{ item.product.cover_image.file.url }}"
+                                         alt="{{ item.product.name }}"
+                                         class="rounded me-2"
+                                         style="width: 50px; height: 50px; object-fit: cover;">
+                                    {% else %}
+                                    <div class="rounded me-2 bg-dark d-flex align-items-center justify-content-center flex-shrink-0"
+                                         style="width:50px;height:50px;">
+                                        <i class="bi bi-play-circle-fill text-white"></i>
+                                    </div>
+                                    {% endif %}
+                                    <div>
+                                        <h6 class="mb-0 small">{{ item.product.name }}</h6>
+                                        <small class="text-muted">${{ item.price }} x {{ item.quantity }}</small>
+                                    </div>
+                                </div>
+                                <span class="fw-semibold">${{ item.total_price }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <hr>
+
+                        <div class="d-flex justify-content-between mb-4">
+                            <span class="h5 mb-0">{% trans "សរុប" %}:</span>
+                            <span class="h5 mb-0 text-primary">${{ cart.get_total_price }}</span>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 btn-lg">
+                            <i class="bi bi-check2-circle me-2"></i>{% trans "ដាក់ការបញ្ជាទិញ" %}
+                        </button>
+
+                        <a href="{% url 'cart:detail' %}" class="btn btn-outline-secondary w-100 mt-2">
+                            <i class="bi bi-arrow-left me-2"></i>{% trans "ត្រឡប់ទៅកាន់កន្រ្តក" %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

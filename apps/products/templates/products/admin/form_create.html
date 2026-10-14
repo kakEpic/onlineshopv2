@@ -1,0 +1,356 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Create New Product{% endblock %}
+
+{% block content %}
+<!-- Dashboard Header -->
+<div class="dashboard-header">
+    <div>
+        <h1 class="dashboard-title"><i class="bi bi-plus-circle me-2"></i>Create New Product</h1>
+        <p class="dashboard-subtitle">Add a new product to your inventory</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'products:dashboard_list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-2"></i>Back to List
+        </a>
+    </div>
+</div>
+
+<form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+    
+    {% if form.non_field_errors %}
+    <div class="alert alert-danger mb-4">
+        <i class="bi bi-exclamation-circle me-2"></i>{{ form.non_field_errors }}
+    </div>
+    {% endif %}
+    
+    <div class="row g-4">
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            <!-- Basic Info Card -->
+            <div class="form-card mb-4">
+                <h5 class="mb-4 pb-3 border-bottom">
+                    <i class="bi bi-info-circle me-2 text-primary"></i>Basic Information
+                </h5>
+                
+                <div class="mb-4">
+                    <label for="{{ form.name.id_for_label }}" class="form-label">ឈ្មោះផលិតផល *</label>
+                    <input type="text" name="name" id="{{ form.name.id_for_label }}" 
+                           class="form-control {% if form.name.errors %}is-invalid{% endif %}" 
+                           value="{{ form.name.value|default:'' }}" required
+                           placeholder="Enter product name">
+                    {% if form.name.errors %}
+                    <div class="invalid-feedback">{{ form.name.errors|join:", " }}</div>
+                    {% endif %}
+                    <div class="form-text">ឈ្មោះផលិតផលនេះនឹងត្រូវបានប្រើដើម្បីបង្កើត URL Copy link </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label for="{{ form.description.id_for_label }}" class="form-label">ការពិពណ៌នា</label>
+                    <textarea name="description" id="{{ form.description.id_for_label }}" 
+                              class="form-control {% if form.description.errors %}is-invalid{% endif %}" 
+                              rows="5" placeholder="បញ្ចូលការពិពណ៌នា">{{ form.description.value|default:'' }}</textarea>
+                    {% if form.description.help_text %}
+                    <div class="form-text">{{ form.description.help_text }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="{{ form.category.id_for_label }}" class="form-label">ប្រភេទ *</label>
+                        {{ form.category }}
+                        <div class="form-text">
+                            <a href="{% url 'products:dashboard_category_add' %}" class="text-primary small">
+                                <i class="bi bi-plus-circle me-1"></i>បន្ថែមប្រភេទថ្មី
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="{{ form.barcode.id_for_label }}" class="form-label">Barcode</label>
+                        <input type="text" name="barcode" id="{{ form.barcode.id_for_label }}" 
+                               class="form-control" value="{{ form.barcode.value|default:'' }}"
+                               placeholder="e.g., 1234567890123">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Pricing Card -->
+            <div class="form-card mb-4">
+                <h5 class="mb-4 pb-3 border-bottom">
+                    <i class="bi bi-currency-dollar me-2 text-success"></i>តម្លៃ
+                </h5>
+                
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded-3">
+                            <h6 class="text-muted mb-3"><i class="bi bi-person me-2"></i>លក់រាយ</h6>
+                            <div class="mb-3">
+                                <label class="form-label">តម្លៃ *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" name="price_retail" step="0.01" 
+                                           class="form-control {% if form.price_retail.errors %}is-invalid{% endif %}" 
+                                           value="{{ form.price_retail.value|default:'' }}"
+                                           placeholder="0.00" required>
+                                </div>
+                                {% if form.price_retail.errors %}
+                                <div class="text-danger small mt-1">{{ form.price_retail.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <label class="form-label">ប្រភេទការលក់</label>
+                                <input type="text" name="retail_sale_type" class="form-control" 
+                                       value="{{ form.retail_sale_type.value|default:'' }}" 
+                                       placeholder="e.g., Bottle, Box, Unit">
+                                <div class="form-text">បង្ហាញស្លាកសម្រាប់ការលក់រាយ</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded-3">
+                            <h6 class="text-muted mb-3"><i class="bi bi-building me-2"></i>លក់ដុំ (Optional)</h6>
+                            <div class="mb-3">
+                                <label class="form-label">តម្លៃ</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" name="price_wholesale" step="0.01" 
+                                           class="form-control" 
+                                           value="{{ form.price_wholesale.value|default:'' }}"
+                                           placeholder="0.00">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="form-label">ប្រភេទការលក់</label>
+                                <input type="text" name="wholesale_sale_type" class="form-control" 
+                                       value="{{ form.wholesale_sale_type.value|default:'' }}"
+                                       placeholder="e.g., Case, Carton">
+                                <div class="form-text">បង្ហាញស្លាកសម្រាប់ការលក់ដុំ</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Discount Card -->
+            <div class="form-card mb-4">
+                <h5 class="mb-4 pb-3 border-bottom">
+                    <i class="bi bi-tag me-2 text-danger"></i>ការកំណត់បញ្ចុះតម្លៃ (Optional)
+                </h5>
+                
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">តម្លៃបញ្ចុះតម្លៃ</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" name="discount_price" step="0.01" 
+                                   class="form-control" 
+                                   value="{{ form.discount_price.value|default:'' }}"
+                                   placeholder="0.00">
+                        </div>
+                        <input type="hidden" name="discount_type" 
+                               value="{{ form.discount_type.value|default:'forever' }}">
+                        <div class="form-text">ទុកទទេសម្រាប់គ្មានបញ្ចុះតម្លៃ</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">ថ្ងៃចាប់ផ្តើម</label>
+                        <input type="datetime-local" name="discount_start_date" 
+                               class="form-control" 
+                               value="{{ form.discount_start_date.value|default:'' }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">ថ្ងៃបញ្ចប់</label>
+                        <input type="datetime-local" name="discount_end_date" 
+                               class="form-control" 
+                               value="{{ form.discount_end_date.value|default:'' }}">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Media Upload Card -->
+            <div class="form-card">
+                <h5 class="mb-4 pb-3 border-bottom">
+                    <i class="bi bi-images me-2 text-primary"></i>រូបភាពផលិតផល
+                </h5>
+                
+                <!-- Upload Section -->
+                <div class="mb-4">
+                    <label class="form-label">បញ្ចូលរូបភាព / វីដេអូ</label>
+                    <div class="upload-area p-4 border-2 border-dashed rounded-3 text-center bg-light" 
+                         onclick="document.getElementById('fileInput').click()"
+                         style="cursor: pointer; border: 2px dashed var(--gray-300) !important; transition: all 0.3s ease;">
+                        <input type="file" name="files" id="fileInput" multiple 
+                               class="d-none" 
+                               accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime"
+                               onchange="handleFileSelect(this.files)">
+                        <i class="bi bi-cloud-upload fs-1 text-muted mb-2 d-block"></i>
+                        <p class="mb-1 fw-medium">អូស & ដាក់ឯកសារ ឬ ចុចដើម្បីរក្សាទុក</p>
+                        <small class="text-muted">រូបភាព: jpg, png, webp, gif (អតិបរមា 10MB) | វីដេអូ: mp4, webm (អតិបរមា 100MB)</small>
+                        <p class="text-muted small mt-2 mb-0">
+                            <i class="bi bi-info-circle me-1"></i>រូបភាពដំបូងនឹងត្រូវកំណត់ជារូបភាពcover
+                        </p>
+                    </div>
+                    <div id="selectedFiles" class="mt-3"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Visibility Card -->
+            <div class="form-card mb-4">
+                <h5 class="mb-4 pb-3 border-bottom">
+                    <i class="bi bi-eye me-2 text-info"></i>ការបង្ហាញ & ស្ថានភាព
+                </h5>
+                
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" name="is_visible_to_client" 
+                           id="is_visible_to_client" {% if form.is_visible_to_client.value %}checked{% endif %}>
+                    <label class="form-check-label" for="is_visible_to_client">
+                        <strong>បង្ហាញទៅអតិថិជន</strong>
+                        <small class="d-block text-muted">បង្ហាញផលិតផលនេះលើហាង</small>
+                    </label>
+                </div>
+                
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" name="is_featured" 
+                           id="is_featured" {% if form.is_featured.value %}checked{% endif %}>
+                    <label class="form-check-label" for="is_featured">
+                        <strong>ផលិតផលពិសេស</strong>
+                        <small class="d-block text-muted">បង្ហាញផលិតផលនេះនៅលើទំព័រដើម</small>
+                    </label>
+                </div>
+                
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" name="is_new_arrival" 
+                           id="is_new_arrival" checked>
+                    <label class="form-check-label" for="is_new_arrival">
+                        <strong>មកដល់ថ្មី</strong>
+                        <small class="d-block text-muted">បង្ហាញស្លាក "មកដល់ថ្មី"</small>
+                    </label>
+                </div>
+            </div>
+            
+            <!-- Quick Tips Card -->
+            <div class="form-card mb-4 bg-primary bg-opacity-10 border-primary">
+                <h5 class="mb-3 text-primary">
+                    <i class="bi bi-lightbulb me-2"></i>Quick Tips
+                </h5>
+                <ul class="list-unstyled mb-0 small">
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success me-2"></i>
+                        Use clear, descriptive product names
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success me-2"></i>
+                        បញ្ចូលរូបភាពមានគុណភាពខ្ពស់ (អប្បបរមា 800x800px)
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success me-2"></i>
+                        សរសេរពិពណ៌នាផលិតផលលម្អិតដើម្បីបង្កើន SEO
+                    </li>
+                    <li class="mb-0">
+                        <i class="bi bi-check-circle text-success me-2"></i>
+                        កំណត់តម្លៃប្រកួតប្រជែងសម្រាប់ការលក់ល្អប្រសើរ
+                    </li>
+                </ul>
+            </div>
+            
+            <!-- Actions Card -->
+            <div class="form-card">
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="bi bi-plus-lg me-2"></i>បង្កើតផលិតផល
+                    </button>
+                    <button type="submit" name="save_and_add" class="btn btn-outline-primary">
+                        <i class="bi bi-plus-circle me-2"></i>បង្កើត & បន្ថែមផ្សេងទៀត
+                    </button>
+                    <a href="{% url 'products:dashboard_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-lg me-2"></i>បោះបង់
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// File upload handling
+function handleFileSelect(files) {
+    const container = document.getElementById('selectedFiles');
+    container.innerHTML = '';
+    
+    if (files.length === 0) return;
+    
+    const preview = document.createElement('div');
+    preview.className = 'row g-2';
+    
+    Array.from(files).forEach((file, index) => {
+        const col = document.createElement('div');
+        col.className = 'col-4 col-md-3';
+        
+        const card = document.createElement('div');
+        card.className = 'position-relative rounded-3 overflow-hidden border' + (index === 0 ? ' border-primary border-2' : '');
+        
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                card.innerHTML = `
+                    <img src="${e.target.result}" class="w-100" style="height: 80px; object-fit: cover;">
+                    ${index === 0 ? '<span class="position-absolute top-0 start-0 badge bg-primary m-1" style="font-size: 0.6rem;"><i class="bi bi-star-fill"></i> Cover</span>' : ''}
+                    <div class="position-absolute bottom-0 start-0 end-0 bg-dark bg-opacity-75 p-1 text-white text-truncate" style="font-size: 0.65rem;">${file.name}</div>
+                `;
+            };
+            reader.readAsDataURL(file);
+        } else {
+            card.innerHTML = `
+                <div class="d-flex align-items-center justify-content-center bg-dark" style="height: 80px;">
+                    <i class="bi bi-play-circle text-white fs-3"></i>
+                </div>
+                <div class="position-absolute bottom-0 start-0 end-0 bg-dark bg-opacity-75 p-1 text-white text-truncate" style="font-size: 0.65rem;">${file.name}</div>
+            `;
+        }
+        
+        col.appendChild(card);
+        preview.appendChild(col);
+    });
+    
+    const info = document.createElement('div');
+    info.className = 'alert alert-info mt-2 small mb-0';
+    info.innerHTML = `<i class="bi bi-info-circle me-2"></i>${files.length} file(s) selected. First image will be the cover.`;
+    
+    container.appendChild(preview);
+    container.appendChild(info);
+}
+
+// Drag & drop styling
+const uploadArea = document.querySelector('.upload-area');
+if (uploadArea) {
+    uploadArea.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        this.style.borderColor = 'var(--primary)';
+        this.style.backgroundColor = 'rgba(37, 99, 235, 0.1)';
+    });
+    
+    uploadArea.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        this.style.borderColor = 'var(--gray-300)';
+        this.style.backgroundColor = '';
+    });
+    
+    uploadArea.addEventListener('drop', function(e) {
+        e.preventDefault();
+        this.style.borderColor = 'var(--gray-300)';
+        this.style.backgroundColor = '';
+        
+        const files = e.dataTransfer.files;
+        document.getElementById('fileInput').files = files;
+        handleFileSelect(files);
+    });
+}
+</script>
+{% endblock %}

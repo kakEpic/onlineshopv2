@@ -1,0 +1,495 @@
+
+{% extends 'client/base_client.html' %}
+{% load static %}
+
+{% block title %}{{ product.name }} | E-Shop{% endblock %}
+
+{% block content %}
+<style>
+    .cursor-pointer {
+        cursor: zoom-in;
+    }
+
+    .video-disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
+        position: relative;
+    }
+
+    .video-disabled::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 0.375rem;
+    }
+
+    #lightboxContent img {
+        max-width: 100%;
+        max-height: 100vh;
+        object-fit: contain;
+    }
+
+    #lightboxContent video {
+        max-width: 100%;
+        max-height: 90vh;
+    }
+</style>
+
+<div class="container py-5">
+    <!-- Breadcrumb Navigation -->
+    <nav aria-label="breadcrumb" class="mb-4 animate-fade-in">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'products:list' %}" class="text-decoration-none">
+                    <i class="bi bi-house me-1"></i>Home
+                </a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{% url 'products:list' %}?category={{ product.category.name }}" class="text-decoration-none">
+                    {{ product.category.name }}
+                </a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">
+                {{ product.name|truncatechars:30 }}
+            </li>
+        </ol>
+    </nav>
+
+    <div class="product-detail">
+        <div class="row g-0">
+            <!-- Product Gallery Section -->
+            <div class="col-lg-6">
+                <div class="gallery p-4">
+                    <!-- Main Image Container -->
+                    <div class="main-image-wrapper position-relative mb-3">
+                        {% if product.cover_image or product.images.all or product.cover_video %}
+                            {% if product.cover_image %}
+                                <!-- Cover Image from Admin -->
+                                <img src="{{ product.cover_image.file.url }}"
+                                     id="mainMedia"
+                                     class="main-image rounded-3 cursor-pointer"
+                                     data-type="image"
+                                     onclick="openMediaLightbox()"
+                                     alt="{{ product.name }}">
+                            {% elif product.images.all %}
+                                {% with first_image=product.images.all|first %}
+                                    <!-- First Product Image as Fallback -->
+                                    <img src="{{ first_image.file.url }}"
+                                         id="mainMedia"
+                                         class="main-image rounded-3 cursor-pointer"
+                                         data-type="image"
+                                         onclick="openMediaLightbox()"
+                                         alt="{{ product.name }}">
+                                {% endwith %}
+                            {% elif product.cover_video %}
+                                <!-- Video Only (No Images) -->
+                                <video id="mainMedia"
+                                       class="main-image rounded-3 cursor-pointer"
+                                       data-type="video"
+                                       controls>
+                                    <source src="{{ product.cover_video.file.url }}">
+                                </video>
+                            {% endif %}
+                        {% else %}
+                            <!-- No Media Available - Show Placeholder -->
+                            <div class="main-image rounded-3 d-flex align-items-center justify-content-center bg-light"
+                                 style="aspect-ratio: 1; cursor: not-allowed;">
+                                <div class="text-center">
+                                    <i class="bi bi-image text-muted" style="font-size: 4rem;"></i>
+                                    <p class="text-muted mt-3">No Image Available</p>
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        <!-- Product Badges -->
+                        <div class="position-absolute top-0 start-0 p-3">
+                            {% if product.is_new_arrival %}
+                                <span class="badge badge-new mb-2 d-block">
+                                    <i class="bi bi-stars me-1"></i>ថ្មី
+                                </span>
+                            {% endif %}
+                            {% if product.is_featured %}
+                                <span class="badge badge-featured mb-2 d-block">
+                                    <i class="bi bi-star-fill me-1"></i>Featured
+                                </span>
+                            {% endif %}
+                            {% if product.is_discount_active %}
+                                <span class="badge badge-discount d-block">
+                                    <i class="bi bi-tag-fill me-1"></i>-{{ product.discount_percentage }}%
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Thumbnails Gallery (Only show if media exists) -->
+                    {% if product.images.all or product.cover_video %}
+                        <div class="thumbnails d-flex gap-2 flex-wrap">
+                            {% for img in product.images.all %}
+                                <div class="thumbnail {% if forloop.first %}active{% endif %}"
+                                     onclick="changeMedia(this, 'image', '{{ img.file.url }}')">
+                                    <img src="{{ img.file.url }}"
+                                         class="w-100 h-100 object-fit-cover"
+                                         alt="Product thumbnail">
+                                </div>
+                            {% endfor %}
+
+                            <!-- Video Thumbnail (Disabled styling if images exist, but still clickable) -->
+                            {% if product.cover_video %}
+                                <div class="thumbnail video-thumb {% if product.images.all %}video-disabled{% endif %}"
+                                     onclick="changeMedia(this, 'video', '{{ product.cover_video.file.url }}')"
+                                     title="{% if product.images.all %}Click to view video{% else %}View video{% endif %}">
+                                    <div class="position-relative w-100 h-100">
+                                        {% if product.cover_image %}
+                                            <img src="{{ product.cover_image.file.url }}"
+                                                 class="w-100 h-100 object-fit-cover"
+                                                 alt="Video poster">
+                                        {% elif product.images.all %}
+                                            {% with poster_image=product.images.all|first %}
+                                                <img src="{{ poster_image.file.url }}"
+                                                     class="w-100 h-100 object-fit-cover"
+                                                     alt="Video poster">
+                                            {% endwith %}
+                                        {% endif %}
+                                        <div class="position-absolute top-50 start-50 translate-middle">
+                                            <i class="bi bi-play-circle-fill text-white fs-2"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Product Information Section -->
+            <div class="col-lg-6">
+                <div class="info p-4">
+                    <!-- Category Tag -->
+                    <span class="category-tag mb-2 d-inline-block">{{ product.category.name }}</span>
+
+                    <!-- Product Title -->
+                    <h1 class="product-title">{{ product.name }}</h1>
+
+                    <!-- View Count & Barcode -->
+                    <div class="d-flex align-items-center gap-3 mb-4 text-muted">
+                        <span>
+                            <i class="bi bi-eye me-1"></i>{{ product.view_count }} views
+                        </span>
+                        {% if product.barcode %}
+                            <span>
+                                <i class="bi bi-upc me-1"></i>{{ product.barcode }}
+                            </span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Price Box -->
+                    <div class="price-box mb-4">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="price-label">
+                                    <i class="bi bi-person me-1"></i>តម្លៃលក់រាយ
+                                    {% if product.retail_sale_type %}
+                                        <span class="badge bg-light text-dark ms-2">
+                                            {{ product.retail_sale_type }}
+                                        </span>
+                                    {% endif %}
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    {% if product.is_discount_active %}
+                                        <span class="price-value">${{ product.discount_price }}</span>
+                                        <span class="price-original">${{ product.price_retail }}</span>
+                                    {% else %}
+                                        <span class="price-value">${{ product.price_retail }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% if product.is_discount_active %}
+                                <div class="text-end">
+                                    <span class="badge bg-danger fs-6">
+                                        Save {{ product.discount_percentage }}%
+                                    </span>
+                                    {% if product.discount_end_date %}
+                                        <small class="d-block text-muted mt-1">
+                                            <i class="bi bi-clock me-1"></i>
+                                            Until {{ product.discount_end_date|date:"M d, Y" }}
+                                        </small>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    {% if product.description %}
+                        <div class="description mb-4">
+                            <h5 class="mb-3">
+                                <i class="bi bi-info-circle me-2"></i>ការពិពណ៌នា
+                            </h5>
+                            <div class="text-muted">
+                                {{ product.description|safe|linebreaks }}
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    <!-- Action Buttons -->
+                    <div class="d-flex gap-2 flex-wrap align-items-center mb-4">
+                        {% if product.is_visible_to_client %}
+                            <!-- Add to Cart Form -->
+                            <form action="{% url 'cart:add' product.id %}"
+                                  method="post"
+                                  class="add-to-cart-form d-flex gap-2">
+                                {% csrf_token %}
+                                <div class="input-group">
+                                    <button type="button"
+                                            class="btn btn-outline-secondary btn-sm qty-decrease"
+                                            aria-label="Decrease quantity">
+                                        <i class="bi bi-dash"></i>
+                                    </button>
+                                    <input type="number"
+                                           name="quantity"
+                                           value="1"
+                                           min="1"
+                                           class="form-control form-control-sm text-center qty-input"
+                                           aria-label="Product quantity">
+                                    <button type="button"
+                                            class="btn btn-outline-secondary btn-sm qty-increase"
+                                            aria-label="Increase quantity">
+                                        <i class="bi bi-plus"></i>
+                                    </button>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-cart-plus me-2"></i>Add to Cart
+                                </button>
+                            </form>
+                        {% else %}
+                            <button class="btn btn-secondary" disabled>
+                                <i class="bi bi-lock me-2"></i>Not Available
+                            </button>
+                        {% endif %}
+
+                        <!-- Navigation Buttons -->
+                        <a href="{% url 'products:list' %}" class="btn btn-outline-primary">
+                            <i class="bi bi-arrow-left me-2"></i>Back to Products
+                        </a>
+                        {% if product.category %}
+                            <a href="{% url 'products:list' %}?category={{ product.category.name }}"
+                               class="btn btn-outline-secondary">
+                                <i class="bi bi-folder me-2"></i>More in {{ product.category.name }}
+                            </a>
+                        {% endif %}
+                    </div>
+
+                    <!-- Social Share Section -->
+                    <div class="share-section pt-4 border-top">
+                        <span class="text-muted me-3">
+                            <i class="bi bi-share me-1"></i>Share:
+                        </span>
+                        <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri }}"
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           class="btn btn-icon me-2"
+                           aria-label="Share on Facebook">
+                            <i class="bi bi-facebook"></i>
+                        </a>
+                        <a href="https://t.me/share/url?url={{ request.build_absolute_uri }}&text={{ product.name }}"
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           class="btn btn-icon me-2"
+                           aria-label="Share on Telegram">
+                            <i class="bi bi-telegram"></i>
+                        </a>
+                        <button type="button"
+                                class="btn btn-icon"
+                                onclick="copyLink()"
+                                aria-label="Copy product link">
+                            <i class="bi bi-link-45deg"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lightbox Modal -->
+<div class="modal fade" id="lightboxModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content bg-dark border-0">
+            <div class="modal-header border-0">
+                <h5 class="modal-title text-white" id="lightboxTitle"></h5>
+                <button type="button"
+                        class="btn-close btn-close-white"
+                        data-bs-dismiss="modal"
+                        aria-label="Close">
+                </button>
+            </div>
+            <div class="modal-body d-flex align-items-center justify-content-center p-0">
+                <div id="lightboxContent"
+                     class="w-100 h-100 d-flex align-items-center justify-content-center">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    /**
+     * Initialize quantity controls and add-to-cart functionality
+     */
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.querySelector('.add-to-cart-form');
+        if (!form) return;
+
+        const input = form.querySelector('.qty-input');
+        const decreaseBtn = form.querySelector('.qty-decrease');
+        const increaseBtn = form.querySelector('.qty-increase');
+
+        // Decrease quantity
+        decreaseBtn.addEventListener('click', () => {
+            input.value = Math.max(1, parseInt(input.value) - 1);
+        });
+
+        // Increase quantity
+        increaseBtn.addEventListener('click', () => {
+            input.value = parseInt(input.value) + 1;
+        });
+
+        // Submit form via AJAX
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+            fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.href = '/cart/';
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        });
+    });
+
+    /**
+     * Copy product link to clipboard
+     */
+    function copyLink() {
+        navigator.clipboard.writeText(window.location.href)
+            .then(() => {
+                alert('Link copied to clipboard!');
+            })
+            .catch(error => console.error('Error copying link:', error));
+    }
+
+    /**
+     * Check if media is available in the page
+     * @returns {Object} Object containing hasImages and hasVideo flags
+     */
+    function getMediaState() {
+        const thumbnails = document.querySelectorAll('.thumbnail:not(.video-disabled)');
+        const videoThumb = document.querySelector('.video-thumb:not(.video-disabled)');
+        const imageThumb = document.querySelector('.thumbnail img');
+
+        return {
+            hasImages: imageThumb !== null,
+            hasVideo: videoThumb !== null,
+            totalMediaItems: thumbnails.length
+        };
+    }
+
+    /**
+     * Change media (image or video) in the main display
+     * Allows switching between all media types (images and videos)
+     * State: Visual feedback (disabled styling) for video when images exist, but still functional
+     * @param {HTMLElement} thumb - The thumbnail element clicked
+     * @param {string} type - Media type ('image' or 'video')
+     * @param {string} url - URL of the media
+     */
+    function changeMedia(thumb, type, url) {
+        const container = document.querySelector('.main-image-wrapper');
+        const mediaState = getMediaState();
+
+        // Remove active class from all thumbnails
+        document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
+        thumb.classList.add('active');
+
+        // Update main media display
+        if (type === 'image') {
+            container.innerHTML = `
+                <img src="${url}"
+                     id="mainMedia"
+                     class="main-image rounded-3 cursor-pointer"
+                     data-type="image"
+                     onclick="openMediaLightbox()"
+                     alt="Product image">
+            `;
+        } else {
+            container.innerHTML = `
+                <video id="mainMedia"
+                       class="main-image rounded-3 cursor-pointer"
+                       data-type="video"
+                       controls>
+                    <source src="${url}">
+                </video>
+            `;
+        }
+    }
+
+    /**
+     * Open media in lightbox modal
+     * State: Handles image, video, and no-media scenarios
+     */
+    function openMediaLightbox() {
+        const media = document.getElementById('mainMedia');
+
+        // Check if media element exists
+        if (!media) {
+            console.warn('No media available to display in lightbox');
+            return;
+        }
+
+        const type = media.dataset.type;
+        const lightboxTitle = document.getElementById('lightboxTitle');
+
+        if (type === 'image') {
+            lightboxTitle.textContent = 'Product Image';
+            document.getElementById('lightboxContent').innerHTML = `
+                <img src="${media.src}"
+                     class="img-fluid"
+                     alt="Full size product image">
+            `;
+        } else if (type === 'video') {
+            lightboxTitle.textContent = 'Product Video';
+            document.getElementById('lightboxContent').innerHTML = `
+                <video controls autoplay class="w-100">
+                    <source src="${media.querySelector('source').src}">
+                </video>
+            `;
+        }
+
+        new bootstrap.Modal(document.getElementById('lightboxModal')).show();
+    }
+
+    /**
+     * Clear lightbox content when modal is hidden
+     */
+    document.getElementById('lightboxModal').addEventListener('hidden.bs.modal', function () {
+        document.getElementById('lightboxContent').innerHTML = '';
+    });
+
+
+</script>
+{% endblock %}

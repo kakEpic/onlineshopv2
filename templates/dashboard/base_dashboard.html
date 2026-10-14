@@ -1,0 +1,259 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Dashboard{% endblock %} | E-Shop Admin</title>
+    
+    <!-- Inter Font (Local) -->
+    <link rel="stylesheet" href="{% static 'node_modules/@fontsource/inter/index.css' %}">
+    
+    <!-- Bootstrap 5.3 (Local) -->
+    <link rel="stylesheet" href="{% static 'node_modules/bootstrap/dist/css/bootstrap.min.css' %}">
+    
+    <!-- Bootstrap Icons (Local) -->
+    <link rel="stylesheet" href="{% static 'node_modules/bootstrap-icons/font/bootstrap-icons.min.css' %}">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="dashboard-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <a href="{% url 'products:dashboard_list' %}" class="sidebar-brand text-decoration-none">
+                    <i class="bi bi-shop me-2"></i>Covita Admin
+                </a>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <div class="nav-section">Main</div>
+                
+                <a href="{% url 'products:dashboard_list' %}" class="sidebar-link {% if request.resolver_match.url_name == 'dashboard_list' %}active{% endif %}">
+                    <i class="bi bi-speedometer2"></i>
+                    <span>Dashboard</span>
+                </a>
+                
+                <div class="nav-section">Products</div>
+                
+                <a href="{% url 'products:dashboard_list' %}" class="sidebar-link {% if 'products' in request.resolver_match.app_name and 'dashboard' in request.resolver_match.url_name and 'category' not in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="bi bi-box-seam"></i>
+                    <span>All Products</span>
+                </a>
+                
+                <a href="{% url 'products:dashboard_category_list' %}" class="sidebar-link {% if 'category' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="bi bi-folder"></i>
+                    <span>Categories</span>
+                </a>
+                
+                <a href="{% url 'products:csv_import' %}" class="sidebar-link {% if 'csv_import' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="bi bi-upload"></i>
+                    <span>Import CSV</span>
+                </a>
+                
+                <div class="nav-section">Orders</div>
+                
+                <a href="{% url 'orders:dashboard_list' %}" class="sidebar-link {% if 'orders' in request.resolver_match.app_name %}active{% endif %}" id="ordersNavLink">
+                    <i class="bi bi-bag-check"></i>
+                    <span>All Orders</span>
+                    <span class="badge bg-danger rounded-pill ms-auto order-notification-badge" id="orderBadge" style="display: none;">0</span>
+                </a>
+                
+                <div class="nav-section">Settings</div>
+                
+                <a href="{% url 'accounts:profile' %}" class="sidebar-link">
+                    <i class="bi bi-person-gear"></i>
+                    <span>Profile</span>
+                </a>
+                
+                <a href="{% url 'products:list' %}" class="sidebar-link">
+                    <i class="bi bi-eye"></i>
+                    <span>View Shop</span>
+                </a>
+                
+                <div class="mt-auto pt-4">
+                    <a href="{% url 'accounts:logout' %}" class="sidebar-link text-danger">
+                        <i class="bi bi-box-arrow-left"></i>
+                        <span>Logout</span>
+                    </a>
+                </div>
+            </nav>
+        </aside>
+        
+        <!-- Main Content -->
+        <div class="dashboard-content">
+            <!-- Mobile Header -->
+            <div class="d-lg-none d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+                <button class="btn btn-icon" id="sidebarToggle">
+                    <i class="bi bi-list fs-4"></i>
+                </button>
+                <span class="fw-bold">Covita Admin</span>
+                <a href="{% url 'accounts:profile' %}" class="btn btn-icon">
+                    <i class="bi bi-person-circle fs-4"></i>
+                </a>
+            </div>
+            
+            <!-- Messages -->
+            {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show mb-4" role="alert">
+                    <i class="bi bi-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' or message.tags == 'danger' %}exclamation-circle{% elif message.tags == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+            
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+    
+    <!-- Sidebar Overlay for Mobile -->
+    <div class="sidebar-overlay d-lg-none" id="sidebarOverlay"></div>
+    
+    <!-- Toast Notification Container -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;">
+        <div id="orderToast" class="toast align-items-center text-bg-primary border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="bi bi-cart-check me-2"></i>
+                    <span id="toastMessage">New order received!</span>
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS (Local) -->
+    <script src="{% static 'node_modules/bootstrap/dist/js/bootstrap.bundle.min.js' %}"></script>
+    
+    <script>
+        // Sidebar Toggle for Mobile
+        const sidebar = document.getElementById('sidebar');
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+        
+        if (sidebarToggle) {
+            sidebarToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('show');
+                sidebarOverlay.classList.toggle('show');
+            });
+        }
+        
+        if (sidebarOverlay) {
+            sidebarOverlay.addEventListener('click', () => {
+                sidebar.classList.remove('show');
+                sidebarOverlay.classList.remove('show');
+            });
+        }
+
+        // WebSocket for real-time order notifications
+        (function() {
+            const badge = document.getElementById('orderBadge');
+            const toastEl = document.getElementById('orderToast');
+            const toastMessage = document.getElementById('toastMessage');
+            let toast = null;
+            let socket = null;
+            let reconnectAttempts = 0;
+            const maxReconnectAttempts = 5;
+
+            function updateBadge(count) {
+                if (count > 0) {
+                    badge.textContent = count > 99 ? '99+' : count;
+                    badge.style.display = 'inline-block';
+                    // Add pulse animation
+                    badge.classList.add('animate-pulse');
+                    setTimeout(() => badge.classList.remove('animate-pulse'), 500);
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+
+            function showNotification(order) {
+                if (toast && toastMessage) {
+                    toastMessage.textContent = `New Order #${order.invoice_no} from ${order.customer_name} - $${order.total}`;
+                    toast.show();
+                    
+                    // Play notification sound (optional)
+                    try {
+                        const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2teleQUA');
+                        audio.volume = 0.3;
+                        audio.play().catch(() => {});
+                    } catch(e) {}
+                }
+            }
+
+            function connectWebSocket() {
+                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const wsUrl = `${protocol}//${window.location.host}/ws/notifications/`;
+                
+                socket = new WebSocket(wsUrl);
+
+                socket.onopen = function() {
+                    console.log('WebSocket connected');
+                    reconnectAttempts = 0;
+                };
+
+                socket.onmessage = function(e) {
+                    const data = JSON.parse(e.data);
+                    
+                    if (data.type === 'init' || data.type === 'count_update') {
+                        updateBadge(data.pending_count);
+                    } else if (data.type === 'new_order') {
+                        updateBadge(data.pending_count);
+                        showNotification(data.order);
+                    }
+                };
+
+                socket.onclose = function(e) {
+                    console.log('WebSocket closed. Reconnecting...');
+                    if (reconnectAttempts < maxReconnectAttempts) {
+                        reconnectAttempts++;
+                        setTimeout(connectWebSocket, 3000 * reconnectAttempts);
+                    }
+                };
+
+                socket.onerror = function(err) {
+                    console.error('WebSocket error:', err);
+                    socket.close();
+                };
+            }
+
+            // Initialize
+            if (toastEl) {
+                toast = new bootstrap.Toast(toastEl, { delay: 5000 });
+            }
+            
+            // Connect WebSocket only for staff users
+            {% if user.is_staff %}
+            connectWebSocket();
+            {% endif %}
+        })();
+    </script>
+    
+    <style>
+        .order-notification-badge {
+            font-size: 0.7rem;
+            min-width: 18px;
+            padding: 0.25rem 0.5rem;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+        .animate-pulse {
+            animation: pulse 0.5s ease-in-out;
+        }
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+        }
+    </style>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

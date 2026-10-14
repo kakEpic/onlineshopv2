@@ -1,0 +1,739 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load static %}
+
+{% block title %}កែប្រែផលិតផល{% endblock %}
+
+{% block content %}
+<!-- Dashboard Header -->
+<div class="dashboard-header">
+    <div>
+        <h1 class="dashboard-title"><i class="bi bi-pencil-square me-2"></i>កែប្រែផលិតផល</h1>
+        <p class="dashboard-subtitle">{{ object.name }}</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'products:detail' object.slug %}" class="btn btn-outline-primary" target="_blank">
+            <i class="bi bi-eye me-2"></i>មើលសាកល្បង
+        </a>
+        <a href="{% url 'products:dashboard_list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-2"></i>ត្រឡប់
+        </a>
+    </div>
+</div>
+
+<form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+    
+    {% if form.non_field_errors %}
+    <div class="alert alert-danger mb-4">
+        <i class="bi bi-exclamation-circle me-2"></i>{{ form.non_field_errors }}
+    </div>
+    {% endif %}
+    
+    <div class="row g-4">
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            <!-- Basic Info Card -->
+            <div class="form-card mb-4">
+                <h5 class="mb-4 pb-3 border-bottom">
+                    <i class="bi bi-info-circle me-2 text-primary"></i>ព័ត៌មានទូទៅ
+                </h5>
+                
+                <div class="mb-4">
+                    <label for="{{ form.name.id_for_label }}" class="form-label">ឈ្មោះផលិតផល *</label>
+                    <input type="text" name="name" id="{{ form.name.id_for_label }}" 
+                           class="form-control {% if form.name.errors %}is-invalid{% endif %}" 
+                           value="{{ form.name.value|default:'' }}" required>
+                    {% if form.name.errors %}
+                    <div class="invalid-feedback">{{ form.name.errors|join:", " }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-4">
+                    <label for="{{ form.description.id_for_label }}" class="form-label">ការពិពណ៌នា</label>
+                    <textarea name="description" id="{{ form.description.id_for_label }}" 
+                              class="form-control {% if form.description.errors %}is-invalid{% endif %}" 
+                              rows="5">{{ form.description.value|default:'' }}</textarea>
+                    {% if form.description.help_text %}
+                    <div class="form-text">{{ form.description.help_text }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="{{ form.category.id_for_label }}" class="form-label">ប្រភេទ *</label>
+                        {{ form.category }}
+                    </div>
+                    <div class="col-md-6">
+                        <label for="{{ form.barcode.id_for_label }}" class="form-label">Barcode</label>
+                        <input type="text" name="barcode" id="{{ form.barcode.id_for_label }}" 
+                               class="form-control" value="{{ form.barcode.value|default:'' }}">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Pricing Card -->
+            <div class="form-card mb-4">
+                <h5 class="mb-4 pb-3 border-bottom">
+                    <i class="bi bi-currency-dollar me-2 text-success"></i>ការកំណត់តម្លៃ
+                </h5>
+                
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded-3">
+                            <h6 class="text-muted mb-3"><i class="bi bi-person me-2"></i>លក់រាយ</h6>
+                            <div class="mb-3">
+                                <label class="form-label">តម្លៃ *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" name="price_retail" step="0.01" 
+                                           class="form-control {% if form.price_retail.errors %}is-invalid{% endif %}" 
+                                           value="{{ form.price_retail.value|default:'' }}">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="form-label">ឯកតា  <small class="text-muted">(ដប, ប្រអប់...)</small></label>
+                                <input type="text" name="retail_sale_type" class="form-control" 
+                                       value="{{ form.retail_sale_type.value|default:'' }}" 
+                                       placeholder="ឧ. ដប, ប្រអប់">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded-3">
+                            <h6 class="text-muted mb-3"><i class="bi bi-building me-2"></i>លក់ដុំ</h6>
+                            <div class="mb-3">
+                                <label class="form-label">តម្លៃ</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" name="price_wholesale" step="0.01" 
+                                           class="form-control" 
+                                           value="{{ form.price_wholesale.value|default:'' }}">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="form-label">ឯកតា <small class="text-muted">(ដើម, ធ្នើ...)</small></label>
+                                <input type="text" name="wholesale_sale_type" class="form-control" 
+                                       value="{{ form.wholesale_sale_type.value|default:'' }}"
+                                       placeholder="ឧ. ដើម, ធ្នើ">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Media Gallery Card -->
+            <div class="form-card mb-4">
+                <h5 class="mb-3 pb-3 border-bottom">
+                    <i class="bi bi-images me-2 text-warning"></i>រូបភាព / វីដេអូ
+                    <span class="badge bg-secondary ms-2">{{ product_media|length }}</span>
+                </h5>
+
+                <!-- Existing Media -->
+                {% if product_media %}
+                <div class="mb-4">
+                    <label class="form-label text-muted small text-uppercase fw-semibold">ប្រព័ន្ធផ្សព្វផ្សាយបច្ចុប្បន្ន</label>
+                    <div class="row g-2" id="mediaGrid">
+                        {% for media in product_media %}
+                        <div class="col-6 col-md-4 col-lg-3" id="media-item-{{ media.pk }}">
+                            <div class="media-item border rounded-3 overflow-hidden position-relative bg-light" style="aspect-ratio:1;">
+                                {% if media.media_type == 'image' %}
+                                <img src="{{ media.file.url }}" class="w-100 h-100 object-fit-cover" alt="{{ media.alt_text }}">
+                                {% else %}
+                                {% if media.video_poster %}
+                                <img src="{{ media.video_poster.url }}" style="width:100%;height:100%;object-fit:cover;display:block;" alt="poster">
+                                {% else %}
+                                <div style="width:100%;height:100%;background:#111;"></div>
+                                {% endif %}
+                                <div class="position-absolute top-50 start-50 translate-middle" style="pointer-events:none;">
+                                    <i class="bi bi-play-circle-fill text-white" style="font-size:2.5rem;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.6));"></i>
+                                </div>
+                                {% endif %}
+
+                                <!-- Cover badge -->
+                                {% if media.is_cover %}
+                                <span class="position-absolute top-0 start-0 badge bg-primary m-1" style="font-size:0.6rem;">
+                                    <i class="bi bi-star-fill me-1"></i>Cover
+                                </span>
+                                {% endif %}
+
+                                <!-- Type badge -->
+                                <span class="position-absolute top-0 end-0 badge {% if media.media_type == 'video' %}bg-danger{% else %}bg-success{% endif %} m-1" style="font-size:0.6rem;">
+                                    {% if media.media_type == 'video' %}<i class="bi bi-camera-video-fill"></i>{% else %}<i class="bi bi-image-fill"></i>{% endif %}
+                                </span>
+
+                                <!-- Actions -->
+                                <div class="media-actions position-absolute bottom-0 start-0 end-0 d-flex gap-1 p-1" style="background:rgba(0,0,0,0.65);">
+                                    {% if not media.is_cover %}
+                                    <form action="{% url 'products:media_set_cover' media.pk %}" method="post" class="flex-fill">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-warning w-100 py-0" title="ដាក់ជាគម្រប" style="font-size:0.7rem;">
+                                            <i class="bi bi-star"></i> Cover
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                    <button type="button"
+                                            class="btn btn-sm btn-danger {% if media.is_cover %}w-100{% else %}flex-fill{% endif %} py-0 media-delete-btn"
+                                            data-pk="{{ media.pk }}"
+                                            data-url="{% url 'products:media_delete' media.pk %}"
+                                            style="font-size:0.7rem;">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Upload New -->
+                <div>
+                    <label class="form-label text-muted small text-uppercase fw-semibold">បន្ថែមមេឌៀថ្មី</label>
+                    <ul class="nav nav-pills mb-3 gap-2">
+                        <li class="nav-item">
+                            <button class="nav-link active px-3 py-1" id="tabImages" type="button" onclick="switchUploadTab('images')">
+                                <i class="bi bi-images me-1"></i>រូបភាព (ច្រើន)
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link px-3 py-1" id="tabVideo" type="button" onclick="switchUploadTab('video')">
+                                <i class="bi bi-camera-video me-1"></i>វីដេអូ (១)
+                            </button>
+                        </li>
+                    </ul>
+
+                    <!-- Images panel -->
+                    <div id="panelImages">
+                        <div class="upload-area border border-2 rounded-3 text-center p-4 mb-3"
+                             onclick="document.getElementById('fileInputImages').click()"
+                             ondragover="event.preventDefault();this.classList.add('border-primary','bg-primary','bg-opacity-10')"
+                             ondragleave="this.classList.remove('border-primary','bg-primary','bg-opacity-10')"
+                             ondrop="handleDrop(event,'images')">
+                            <i class="bi bi-cloud-upload text-primary" style="font-size:2.5rem;"></i>
+                            <p class="mb-1 mt-2 fw-semibold">ចុចឬអូសរូបភាពមកទីនេះ</p>
+                            <p class="text-muted small mb-0">JPG, PNG, WEBP · Max 10MB/file</p>
+                            <input type="file" id="fileInputImages" name="files" multiple
+                                   accept="image/jpeg,image/png,image/webp,image/gif"
+                                   class="d-none" onchange="handleFileSelect(event,'images')">
+                        </div>
+                        <div id="previewImages" class="row g-2"></div>
+                    </div>
+
+                    <!-- Video panel -->
+                    <div id="panelVideo" style="display:none;">
+                        <div class="upload-area border border-2 rounded-3 text-center p-4 mb-3"
+                             onclick="document.getElementById('fileInputVideo').click()"
+                             ondragover="event.preventDefault();this.classList.add('border-danger','bg-danger','bg-opacity-10')"
+                             ondragleave="this.classList.remove('border-danger','bg-danger','bg-opacity-10')"
+                             ondrop="handleDrop(event,'video')">
+                            <i class="bi bi-camera-video text-danger" style="font-size:2.5rem;"></i>
+                            <p class="mb-1 mt-2 fw-semibold">ចុចឬអូសវីដេអូមកទីនេះ</p>
+                            <p class="text-muted small mb-0">MP4, WEBM, MOV · Max 100MB</p>
+                            <input type="file" id="fileInputVideo" name="files"
+                                   accept="video/mp4,video/webm,video/quicktime"
+                                   class="d-none" onchange="handleFileSelect(event,'video')">
+                        </div>
+                        <div id="previewVideo"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Discount Card -->
+            <div class="form-card mb-4">
+                <h5 class="mb-3 pb-3 border-bottom">
+                    <i class="bi bi-tag me-2 text-danger"></i>ការកំណត់បញ្ចុះតម្លៃ
+                </h5>
+
+                <!-- Step 1: Dropdown to choose discount mode -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">ជ្រើសរើសប្រភេទបញ្ចុះតម្លៃ</label>
+                    <select id="discountModeSelect" class="form-select">
+                        <option value="none" {% if not form.discount_price.value %}selected{% endif %}>— គ្មានការបញ្ចុះតម្លៃ —</option>
+                        <option value="forever"
+                            {% if form.discount_price.value and form.discount_type.value == 'forever' %}selected{% endif %}>
+                            ♾ &nbsp;អចិន្ត្រៃយ៍ — សកម្មជារៀងរហូត
+                        </option>
+                        <option value="date_range"
+                            {% if form.discount_price.value and form.discount_type.value == 'date_range' %}selected{% endif %}>
+                            📅 &nbsp;កំណត់ថ្ងៃ — ចាប់ផ្តើម → បញ្ចប់ (Auto expire)
+                        </option>
+                    </select>
+                    <!-- Hidden field submitted to Django form -->
+                    <input type="hidden" name="discount_type" id="discountTypeHidden"
+                           value="{{ form.discount_type.value|default:'forever' }}">
+                </div>
+
+                <!-- Step 2: Price / Percentage inputs -->
+                <div id="discountInputSection"
+                     style="{% if not form.discount_price.value %}display:none;{% endif %}">
+
+                    <!-- $ / % entry mode toggle -->
+                    <div class="mb-3">
+                        <div class="btn-group" role="group" aria-label="Input mode">
+                            <input type="radio" class="btn-check" name="discountInputMode" id="modeAmount" value="amount" checked>
+                            <label class="btn btn-outline-danger" for="modeAmount">
+                                <i class="bi bi-currency-dollar"></i> ប្រាក់ ($)
+                            </label>
+                            <input type="radio" class="btn-check" name="discountInputMode" id="modePct" value="pct">
+                            <label class="btn btn-outline-warning" for="modePct">
+                                <i class="bi bi-percent"></i> ភាគរយ (%)
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3 align-items-end">
+                        <!-- $ amount input -->
+                        <div class="col-sm-4" id="colAmountInput">
+                            <label class="form-label fw-semibold">តម្លៃបញ្ចុះ ($)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="discount_price" id="discountPrice"
+                                       step="0.01" min="0"
+                                       class="form-control {% if form.discount_price.errors %}is-invalid{% endif %}"
+                                       value="{{ form.discount_price.value|default:'' }}"
+                                       placeholder="0.00">
+                            </div>
+                            {% if form.discount_price.errors %}
+                            <div class="text-danger small mt-1">{{ form.discount_price.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- % entry input (hidden by default) -->
+                        <div class="col-sm-4" id="colPctInput" style="display:none;">
+                            <label class="form-label fw-semibold">ភាគរយបញ្ចុះ (%)</label>
+                            <div class="input-group">
+                                <input type="number" id="discountPctInput"
+                                       step="0.1" min="0.1" max="99.9"
+                                       class="form-control" placeholder="10.0">
+                                <span class="input-group-text">%</span>
+                            </div>
+                        </div>
+
+                        <!-- Auto-computed preview (opposite field) -->
+                        <div class="col-sm-3">
+                            <label class="form-label fw-semibold text-muted" id="previewLbl">% បញ្ចុះ</label>
+                            <div class="input-group">
+                                <input type="text" id="discountPct"
+                                       class="form-control bg-light fw-bold text-danger"
+                                       value="{% if object.pk and object.discount_price %}{{ object.discount_percentage }}%{% else %}—{% endif %}"
+                                       readonly>
+                                <span class="input-group-text text-danger"><i class="bi bi-tag-fill"></i></span>
+                            </div>
+                        </div>
+
+                        <!-- Retail baseline -->
+                        <div class="col-sm-5" id="colRetailPreview">
+                            <label class="form-label fw-semibold text-muted">តម្លៃគោល</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="text" id="retailPreview" class="form-control bg-light"
+                                       value="{{ form.price_retail.value|default:'0.00' }}" readonly>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Date Range Fields (shown only when date_range selected) -->
+                <div class="row g-3 mb-3" id="dateRangeSection"
+                     style="{% if not form.discount_price.value or form.discount_type.value != 'date_range' %}display:none;{% endif %}">
+                    <div class="col-md-6">
+                        <label class="form-label">ថ្ងៃចាប់ផ្តើម</label>
+                        <input type="datetime-local" name="discount_start_date"
+                               class="form-control {% if form.discount_start_date.errors %}is-invalid{% endif %}"
+                               value="{{ form.discount_start_date.value|date:'Y-m-d\\TH:i'|default:form.discount_start_date.value|default:'' }}">
+                        {% if form.discount_start_date.errors %}
+                        <div class="invalid-feedback">{{ form.discount_start_date.errors|join:", " }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">ថ្ងៃបញ្ចប់</label>
+                        <input type="datetime-local" name="discount_end_date"
+                               class="form-control {% if form.discount_end_date.errors %}is-invalid{% endif %}"
+                               value="{{ form.discount_end_date.value|date:'Y-m-d\\TH:i'|default:form.discount_end_date.value|default:'' }}">
+                        {% if form.discount_end_date.errors %}
+                        <div class="invalid-feedback">{{ form.discount_end_date.errors|join:", " }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Active Status Badge -->
+                {% if object.pk and object.discount_price %}
+                <div class="mt-3 p-3 rounded-3" style="background: var(--gray-50);">
+                    <div class="d-flex align-items-center gap-3 flex-wrap">
+                        <div>
+                            <span class="text-muted small">តម្លៃដើម</span>
+                            <div class="fw-bold text-decoration-line-through text-muted">${{ object.price_retail }}</div>
+                        </div>
+                        <i class="bi bi-arrow-right text-muted"></i>
+                        <div>
+                            <span class="text-muted small">តម្លៃបន្ទាប់ពីបញ្ចុះ</span>
+                            <div class="fw-bold text-success fs-5">${{ object.final_retail_price }}</div>
+                        </div>
+                        <div>
+                            <span class="badge bg-danger fs-6">-{{ object.discount_percentage }}%</span>
+                        </div>
+                        <div class="ms-auto">
+                            {% if object.is_forever_discount %}
+                            <span class="badge bg-success">
+                                <i class="bi bi-infinity me-1"></i>អចិន្ត្រៃយ៍ — សកម្ម
+                            </span>
+                            {% elif object.is_discount_active %}
+                            <span class="badge bg-success">
+                                <i class="bi bi-check-circle me-1"></i>សកម្ម
+                                {% if object.discount_end_date %}
+                                · បញ្ចប់ {{ object.discount_end_date|date:"d M Y" }}
+                                {% endif %}
+                            </span>
+                            {% else %}
+                            <span class="badge bg-secondary">
+                                <i class="bi bi-clock me-1"></i>មិនទាន់សកម្ម
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Visibility Card -->
+            <div class="form-card mb-4">
+                <h5 class="mb-4 pb-3 border-bottom">
+                    <i class="bi bi-eye me-2 text-info"></i>ការបង្ហាញ
+                </h5>
+                
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" name="is_visible_to_client" 
+                           id="is_visible_to_client" {% if form.is_visible_to_client.value %}checked{% endif %}>
+                    <label class="form-check-label" for="is_visible_to_client">
+                        <strong>បង្ហាញដល់អតិថិជន</strong>
+                        <small class="d-block text-muted">បង្ហាញផលិតផលនេះក្នុងហាងអនឡាញ</small>
+                    </label>
+                </div>
+                
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" name="is_featured" 
+                           id="is_featured" {% if form.is_featured.value %}checked{% endif %}>
+                    <label class="form-check-label" for="is_featured">
+                        <strong>ផលិតផលពិសេស</strong>
+                        <small class="d-block text-muted">បង្ហាញក្នុងទំព័រដើម</small>
+                    </label>
+                </div>
+                
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" name="is_new_arrival" 
+                           id="is_new_arrival" {% if form.is_new_arrival.value %}checked{% endif %}>
+                    <label class="form-check-label" for="is_new_arrival">
+                        <strong>ទំនិញថ្មីមកដល់</strong>
+                        <small class="d-block text-muted">បង្ហាញស្លាក «ថ្មី» លើផលិតផល</small>
+                    </label>
+                </div>
+            </div>
+            
+            <!-- Product Info Card -->
+            <div class="form-card mb-4">
+                <h5 class="mb-4 pb-3 border-bottom">
+                    <i class="bi bi-bar-chart me-2 text-secondary"></i>ស្ថិតិ
+                </h5>
+                
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">ចំនួនអ្នកមើល</span>
+                    <strong>{{ object.view_count }}</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">បង្កើតថ្ងៃ</span>
+                    <strong>{{ object.created_at|date:"M d, Y" }}</strong>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted">កែប្រែចុងក្រោយ</span>
+                    <strong>{{ object.updated_at|date:"M d, Y H:i" }}</strong>
+                </div>
+            </div>
+            
+            <!-- Actions Card -->
+            <div class="form-card">
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="bi bi-check-lg me-2"></i>រក្សាទុក
+                    </button>
+                    <a href="{% url 'products:dashboard_list' %}" class="btn btn-outline-secondary">
+                        បោះបង់
+                    </a>
+                    <hr>
+                    <a href="{% url 'products:dashboard_delete' object.pk %}" class="btn btn-outline-danger">
+                        <i class="bi bi-trash me-2"></i>លុបផលិតផល
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-card select.form-control,
+    .form-card select {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 2px solid var(--gray-200);
+        border-radius: var(--radius);
+    }
+    .upload-area {
+        cursor: pointer;
+        transition: all 0.2s;
+        border-style: dashed !important;
+        border-color: var(--gray-300) !important;
+    }
+    .upload-area:hover {
+        background-color: rgba(37, 99, 235, 0.04);
+        border-color: var(--bs-primary) !important;
+    }
+    .media-item {
+        transition: transform 0.2s;
+    }
+    .media-item:hover {
+        transform: scale(1.03);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+    }
+    .media-actions {
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+    .media-item:hover .media-actions {
+        opacity: 1;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // ============================================================
+    // Media upload tabs
+    // ============================================================
+    function switchUploadTab(tab) {
+        const isImages = tab === 'images';
+        document.getElementById('panelImages').style.display = isImages ? '' : 'none';
+        document.getElementById('panelVideo').style.display = isImages ? 'none' : '';
+        document.getElementById('tabImages').classList.toggle('active', isImages);
+        document.getElementById('tabVideo').classList.toggle('active', !isImages);
+
+        // Swap input name so only active panel files are submitted
+        document.getElementById('fileInputImages').name = isImages ? 'files' : '';
+        document.getElementById('fileInputVideo').name = isImages ? '' : 'files';
+    }
+
+    // ============================================================
+    // File select + drag & drop
+    // ============================================================
+    function handleFileSelect(event, type) {
+        const files = Array.from(event.target.files);
+        renderPreviews(files, type);
+    }
+
+    function handleDrop(event, type) {
+        event.preventDefault();
+        const files = Array.from(event.dataTransfer.files);
+        const inputId = type === 'images' ? 'fileInputImages' : 'fileInputVideo';
+        const input = document.getElementById(inputId);
+        const dt = new DataTransfer();
+        files.forEach(f => dt.items.add(f));
+        input.files = dt.files;
+        renderPreviews(files, type);
+        event.currentTarget.classList.remove('border-primary','bg-primary','bg-opacity-10','border-danger','bg-danger');
+    }
+
+    function renderPreviews(files, type) {
+        const containerId = type === 'images' ? 'previewImages' : 'previewVideo';
+        const inputId = type === 'images' ? 'fileInputImages' : 'fileInputVideo';
+        const container = document.getElementById(containerId);
+        container.innerHTML = '';
+
+        files.forEach((file, i) => {
+            const reader = new FileReader();
+            const isVideo = file.type.startsWith('video/');
+            const size = formatSize(file.size);
+
+            if (isVideo) {
+                const url = URL.createObjectURL(file);
+                const div = document.createElement('div');
+                div.className = 'd-flex align-items-center gap-3 p-3 border rounded-3 mb-2';
+                div.innerHTML = `
+                    <video src="${url}" class="rounded flex-shrink-0" style="width:80px;height:60px;object-fit:cover;" muted preload="metadata"></video>
+                    <div class="flex-grow-1 overflow-hidden">
+                        <div class="fw-semibold small text-truncate">${file.name}</div>
+                        <div class="text-muted" style="font-size:0.75rem;">${size}</div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-danger flex-shrink-0" onclick="removePreviewFile('${inputId}',${i},this)">
+                        <i class="bi bi-x-lg"></i>
+                    </button>`;
+                container.appendChild(div);
+            } else {
+                reader.onload = e => {
+                    const col = document.createElement('div');
+                    col.className = 'col-4 col-md-3 position-relative';
+                    col.dataset.index = i;
+                    col.innerHTML = `
+                        <div class="border rounded-3 overflow-hidden position-relative" style="aspect-ratio:1;">
+                            <img src="${e.target.result}" class="w-100 h-100" style="object-fit:cover;">
+
+                            <button
+                                type="button"
+                                class="btn btn-danger btn-sm position-absolute top-0 end-0 m-1 d-flex align-items-center justify-content-center"
+                                style="width:22px;height:22px;padding:0;"
+                                onclick="removePreviewFile('${inputId}',${i},this)">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+                        <div class="text-center mt-1" style="font-size:0.7rem;color:#888;">${size}</div>`;
+                    container.appendChild(col);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+
+    function removePreviewFile(inputId, index, btn) {
+        const input = document.getElementById(inputId);
+        const dt = new DataTransfer();
+        Array.from(input.files).forEach((f, i) => { if (i !== index) dt.items.add(f); });
+        input.files = dt.files;
+        // Re-render
+        renderPreviews(Array.from(dt.files), inputId === 'fileInputImages' ? 'images' : 'video');
+    }
+
+    function formatSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    // ============================================================
+    // Delete existing media via AJAX
+    // ============================================================
+    document.addEventListener('click', function(e) {
+        const btn = e.target.closest('.media-delete-btn');
+        if (!btn) return;
+        if (!confirm('លុបមេឌៀនេះ?')) return;
+
+        const pk = btn.dataset.pk;
+        const url = btn.dataset.url;
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        fetch(url, {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': csrfToken }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                const item = document.getElementById('media-item-' + pk);
+                if (item) item.remove();
+            }
+        })
+        .catch(() => alert('Error deleting media.'));
+    });
+
+    // ============================================================
+    // Discount section — dropdown + $ / % toggle
+    // ============================================================
+    const discountModeSelect  = document.getElementById('discountModeSelect');
+    const discountTypeHidden  = document.getElementById('discountTypeHidden');
+    const discountInputSection= document.getElementById('discountInputSection');
+    const dateSection         = document.getElementById('dateRangeSection');
+    const discountPrice       = document.getElementById('discountPrice');
+    const discountPctInput    = document.getElementById('discountPctInput');
+    const discountPct         = document.getElementById('discountPct');
+    const retailPreview       = document.getElementById('retailPreview');
+    const retailInput         = document.querySelector('input[name="price_retail"]');
+    const colAmountInput      = document.getElementById('colAmountInput');
+    const colPctInput         = document.getElementById('colPctInput');
+    const previewLbl          = document.getElementById('previewLbl');
+
+    function getRetail() {
+        return parseFloat((retailInput ? retailInput.value : null) || retailPreview.value) || 0;
+    }
+
+    // Recalculate % when price amount changes
+    function computeFromAmount() {
+        const retail = getRetail();
+        const amt = parseFloat(discountPrice.value) || 0;
+        if (amt > 0 && retail > 0 && amt < retail) {
+            discountPct.value = ((retail - amt) / retail * 100).toFixed(1) + '%';
+            discountPct.style.color = '#dc3545';
+        } else {
+            discountPct.value = amt > 0 ? '⚠ invalid' : '—';
+            discountPct.style.color = '';
+        }
+        if (retailPreview) retailPreview.value = retail.toFixed(2);
+    }
+
+    // Recalculate price when % changes
+    function computeFromPct() {
+        const retail = getRetail();
+        const pct = parseFloat(discountPctInput.value) || 0;
+        if (pct > 0 && pct < 100 && retail > 0) {
+            const amt = (retail * (1 - pct / 100)).toFixed(2);
+            discountPrice.value = amt;
+            discountPct.value = pct.toFixed(1) + '%';
+            discountPct.style.color = '#dc3545';
+        } else {
+            discountPrice.value = '';
+            discountPct.value = '—';
+            discountPct.style.color = '';
+        }
+    }
+
+    // $ / % toggle
+    document.getElementById('modeAmount').addEventListener('change', function() {
+        colAmountInput.style.display = '';
+        colPctInput.style.display = 'none';
+        previewLbl.textContent = '% បញ្ចុះ';
+        computeFromAmount();
+    });
+    document.getElementById('modePct').addEventListener('change', function() {
+        colAmountInput.style.display = 'none';
+        colPctInput.style.display = '';
+        previewLbl.textContent = 'តម្លៃបញ្ចុះ ($)';
+        // Pre-fill % from existing price
+        const retail = getRetail();
+        const amt = parseFloat(discountPrice.value) || 0;
+        if (amt > 0 && retail > 0) {
+            discountPctInput.value = ((retail - amt) / retail * 100).toFixed(1);
+        }
+        computeFromPct();
+    });
+
+    discountPrice.addEventListener('input', computeFromAmount);
+    discountPctInput.addEventListener('input', computeFromPct);
+    if (retailInput) {
+        retailInput.addEventListener('input', function() {
+            retailPreview.value = getRetail().toFixed(2);
+            const mode = document.querySelector('input[name="discountInputMode"]:checked').value;
+            if (mode === 'amount') computeFromAmount(); else computeFromPct();
+        });
+    }
+
+    // Discount mode dropdown — NO date clearing, just show/hide
+    discountModeSelect.addEventListener('change', function() {
+        const mode = this.value;
+        if (mode === 'none') {
+            discountInputSection.style.display = 'none';
+            dateSection.style.display = 'none';
+            discountTypeHidden.value = 'forever';
+            discountPrice.value = '';
+            discountPct.value = '—';
+            discountPct.style.color = '';
+        } else {
+            discountInputSection.style.display = '';
+            discountTypeHidden.value = mode;
+            dateSection.style.display = (mode === 'date_range') ? '' : 'none';
+        }
+    });
+
+    // Run initial calculation
+    computeFromAmount();
+</script>
+{% endblock %}

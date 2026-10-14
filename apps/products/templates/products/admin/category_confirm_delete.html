@@ -1,0 +1,63 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Delete Category{% endblock %}
+
+{% block content %}
+<!-- Dashboard Header -->
+<div class="dashboard-header">
+    <div>
+        <h1 class="dashboard-title text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Delete Category</h1>
+        <p class="dashboard-subtitle">This action cannot be undone</p>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="form-card text-center">
+            <div class="mb-4">
+                <div class="rounded-circle bg-danger bg-opacity-10 d-inline-flex align-items-center justify-content-center mb-4" 
+                     style="width: 80px; height: 80px;">
+                    <i class="bi bi-folder-x text-danger" style="font-size: 2.5rem;"></i>
+                </div>
+                
+                <h4 class="mb-2">Delete "{{ object.name }}"?</h4>
+                <p class="text-muted mb-0">Category ID: #{{ object.id }}</p>
+            </div>
+            
+            <div class="alert alert-warning text-start mb-4">
+                <div class="d-flex">
+                    <i class="bi bi-exclamation-triangle me-3 fs-5"></i>
+                    <div>
+                        <strong>Soft delete will hide this category.</strong>
+                        <p class="mb-0 small">This category will be hidden from dashboard lists and client filters, but assigned products will remain intact.</p>
+                    </div>
+                </div>
+            </div>
+            {% if object.products.count > 0 %}
+            <div class="alert alert-info text-start mb-4">
+                <div class="d-flex">
+                    <i class="bi bi-info-circle me-3 fs-5"></i>
+                    <div>
+                        <strong>Note:</strong>
+                        <p class="mb-0 small">This category contains <strong>{{ object.products.count }} products</strong>. They will keep their category assignment.</p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <form method="post">
+                {% csrf_token %}
+                <div class="d-flex gap-3 justify-content-center">
+                    <a href="{% url 'products:dashboard_category_list' %}" class="btn btn-outline-secondary btn-lg px-4">
+                        <i class="bi bi-x-lg me-2"></i>Cancel
+                    </a>
+                    <button type="submit" class="btn btn-danger btn-lg px-4">
+                        <i class="bi bi-trash me-2"></i>Delete Category
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

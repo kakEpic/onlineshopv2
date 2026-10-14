@@ -1,0 +1,109 @@
+{% extends 'client/base_client.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Payment" %} - {{ order.invoice_no }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'products:list' %}">{% trans "Home" %}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'cart:checkout' %}">{% trans "Checkout" %}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{% trans "Payment" %}</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-qr-code me-2"></i>{% trans "Bakong QR Payment" %}
+                    </h5>
+                </div>
+                <div class="card-body text-center">
+                    <p class="lead">{% trans "Scan the QR code with your Bakong or mobile banking app to complete payment." %}</p>
+                    <div class="mb-4">
+                        {% if order.qr_image %}
+                        <img src="{{ order.qr_image }}" alt="QR Code" class="img-fluid" style="max-width: 320px;" />
+                        {% else %}
+                        <div class="alert alert-warning">{% trans "QR code is not available. Please contact support." %}</div>
+                        {% endif %}
+                    </div>
+                    <div class="row gy-3">
+                        <div class="col-md-6">
+                            <div class="card border-secondary">
+                                <div class="card-body">
+                                    <h6 class="card-title">{% trans "Invoice" %}</h6>
+                                    <p class="mb-0">{{ order.invoice_no }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card border-secondary">
+                                <div class="card-body">
+                                    <h6 class="card-title">{% trans "Amount" %}</h6>
+                                    <p class="mb-0">${{ order.total }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <a id="check-payment-status" href="#" class="btn btn-success btn-lg">
+                            <i class="bi bi-check2-circle me-2"></i>{% trans "Check Payment Status" %}
+                        </a>
+                    </div>
+
+                    <div id="payment-result" class="mt-4"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const statusUrl = '{% url "payment:check_payment" order.pk %}';
+    const redirectUrl = '{% url "cart:order_success" order.pk %}';
+    const result = document.getElementById('payment-result');
+    const button = document.getElementById('check-payment-status');
+
+    function showInfo(message, type = 'info') {
+        result.innerHTML = `
+            <div class="alert alert-${type}">
+                ${message}
+            </div>
+        `;
+    }
+
+    function checkStatus() {
+        fetch(statusUrl, {
+            headers: {'X-Requested-With': 'XMLHttpRequest'}
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.order_status === 'paid') {
+                window.location.href = redirectUrl;
+                return;
+            }
+
+            showInfo(`{% trans "Current status:" %} ${data.status || data.order_status}`, 'info');
+        })
+        .catch(() => {
+            showInfo('{% trans "Unable to check payment status. Please try again." %}', 'danger');
+        });
+    }
+
+    button.addEventListener('click', function(event) {
+        event.preventDefault();
+        checkStatus();
+    });
+
+    checkStatus();
+    const intervalId = setInterval(checkStatus, 8000);
+});
+</script>
+{% endblock %}

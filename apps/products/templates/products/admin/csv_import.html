@@ -1,0 +1,235 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Import Products{% endblock %}
+
+{% block content %}
+<!-- Dashboard Header -->
+<div class="dashboard-header">
+    <div>
+        <h1 class="dashboard-title"><i class="bi bi-cloud-upload me-2"></i>Import Products</h1>
+        <p class="dashboard-subtitle">Bulk import products from CSV/TSV files</p>
+    </div>
+    <a href="{% url 'products:dashboard_list' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-2"></i>Back to Products
+    </a>
+</div>
+
+<div class="row g-4">
+    <!-- Upload Form -->
+    <div class="col-lg-8">
+        <div class="form-card">
+            <h5 class="mb-4 pb-3 border-bottom">
+                <i class="bi bi-file-earmark-spreadsheet me-2 text-primary"></i>Upload CSV File
+            </h5>
+            
+            <form method="post" enctype="multipart/form-data" novalidate>
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger mb-4">
+                    <i class="bi bi-exclamation-circle me-2"></i>{{ form.non_field_errors }}
+                </div>
+                {% endif %}
+                
+                <div class="file-upload mb-4" onclick="document.getElementById('csv_file').click()">
+                    <i class="bi bi-cloud-arrow-up"></i>
+                    <h5>Drag & drop your file here</h5>
+                    <p class="text-muted mb-0">or click to browse</p>
+                    <input type="file" name="csv_file" id="csv_file" accept=".csv,.tsv,.txt" required>
+                    <div id="file-name" class="mt-3 text-primary fw-bold"></div>
+                </div>
+                
+                {% if form.csv_file.errors %}
+                <div class="alert alert-danger mb-4">
+                    <i class="bi bi-exclamation-circle me-2"></i>{{ form.csv_file.errors|join:", " }}
+                </div>
+                {% endif %}
+                
+                <div class="d-flex gap-3">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="bi bi-upload me-2"></i>Upload & Import
+                    </button>
+                    <a href="{% url 'products:dashboard_list' %}" class="btn btn-outline-secondary btn-lg">
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Instructions -->
+    <div class="col-lg-4">
+        <div class="form-card">
+            <h5 class="mb-4 pb-3 border-bottom">
+                <i class="bi bi-info-circle me-2 text-info"></i>ការណែនាំនិងលក្ខណៈពិសេស
+            </h5>
+            
+            <div class="mb-4">
+                <h6 class="text-muted mb-2">តម្រូវការតារាង</h6>
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-2">
+                        <code class="bg-light px-2 py-1 rounded">Handle</code>
+                        <small class="text-muted d-block">សម្គាល់ផលិតផល</small>
+                    </li>
+                    <li class="mb-2">
+                        <code class="bg-light px-2 py-1 rounded">Option 1 value</code>
+                        <small class="text-muted d-block">ប្រភេទលក់ (រាយ/ដុំ)</small>
+                    </li>
+                    <li>
+                        <code class="bg-light px-2 py-1 rounded">Price [Cosvita ]</code>
+                        <small class="text-muted d-block">តម្លៃផលិតផល</small>
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="mb-4">
+                <h6 class="text-muted mb-2">លក្ខណៈពិសេស</h6>
+                <ul class="small text-muted mb-0">
+                    <li>គាំទ្រ CSV (comma) & TSV (tab)</li>
+                    <li>បង្កើតប្រភេទដោយស្វ័យប្រវត្តិ</li>
+                    <li>Skip ផលិតផលដែលមានស្រាប់ (active)</li>
+                    <li>តម្រូវការកូដ UTF-8</li>
+                    <li>ទំហំឯកសារអតិបរមា: 10MB</li>
+                </ul>
+            </div>
+            
+            <div class="alert alert-light border mb-0">
+                <i class="bi bi-lightbulb text-warning me-2"></i>
+                <small>Handle ដូចគ្នា: active product នឹងត្រូវ skip, soft-deleted product នឹងបង្កើតថ្មី។</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Import Result -->
+{% if result %}
+<div class="mt-4">
+    <div class="data-card">
+        <div class="data-card-header {% if result.has_errors %}bg-danger text-white{% elif result.has_warnings %}bg-warning{% else %}bg-success text-white{% endif %}">
+            <span class="data-card-title">
+                <i class="bi bi-clipboard-data me-2"></i>Import Results - {{ filename }}
+            </span>
+        </div>
+        
+        <!-- Stats -->
+        <div class="p-4 border-bottom">
+            <div class="row g-3 text-center">
+                <div class="col-6 col-md-2">
+                    <div class="p-3 bg-light rounded-3">
+                        <h3 class="mb-0 text-primary">{{ result.total_rows }}</h3>
+                        <small class="text-muted">Total Rows</small>
+                    </div>
+                </div>
+                <div class="col-6 col-md-2">
+                    <div class="p-3 bg-success bg-opacity-10 rounded-3">
+                        <h3 class="mb-0 text-success">{{ result.products_created }}</h3>
+                        <small class="text-muted">Created</small>
+                    </div>
+                </div>
+                <div class="col-6 col-md-2">
+                    <div class="p-3 bg-info bg-opacity-10 rounded-3">
+                        <h3 class="mb-0 text-info">{{ result.skipped }}</h3>
+                        <small class="text-muted">Skipped</small>
+                    </div>
+                </div>
+                <div class="col-6 col-md-2">
+                    <div class="p-3 bg-secondary bg-opacity-10 rounded-3">
+                        <h3 class="mb-0 text-secondary">{{ result.categories_created }}</h3>
+                        <small class="text-muted">Categories</small>
+                    </div>
+                </div>
+                <div class="col-6 col-md-2">
+                    <div class="p-3 bg-warning bg-opacity-10 rounded-3">
+                        <h3 class="mb-0 text-warning">{{ result.warning_count }}</h3>
+                        <small class="text-muted">Warnings</small>
+                    </div>
+                </div>
+                <div class="col-6 col-md-2">
+                    <div class="p-3 bg-danger bg-opacity-10 rounded-3">
+                        <h3 class="mb-0 text-danger">{{ result.error_count }}</h3>
+                        <small class="text-muted">Errors</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Errors & Warnings -->
+        {% if result.errors %}
+        <div class="p-4">
+            <h6 class="mb-3"><i class="bi bi-exclamation-triangle me-2 text-warning"></i>Issues Found</h6>
+            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 80px;">Row</th>
+                            <th style="width: 150px;">Handle</th>
+                            <th>Message</th>
+                            <th style="width: 100px;">Type</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for error in result.errors %}
+                        <tr>
+                            <td><span class="badge bg-light text-dark">#{{ error.row_number }}</span></td>
+                            <td><code>{{ error.handle|default:"-"|truncatechars:20 }}</code></td>
+                            <td>{{ error.message }}</td>
+                            <td>
+                                {% if error.is_warning %}
+                                <span class="badge bg-warning text-dark">Warning</span>
+                                {% else %}
+                                <span class="badge bg-danger">Error</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('csv_file').addEventListener('change', function(e) {
+    const fileName = e.target.files[0]?.name;
+    const fileNameDisplay = document.getElementById('file-name');
+    if (fileName) {
+        fileNameDisplay.innerHTML = '<i class="bi bi-file-earmark-check me-2"></i>' + fileName;
+    } else {
+        fileNameDisplay.textContent = '';
+    }
+});
+
+// Drag and drop
+const fileUpload = document.querySelector('.file-upload');
+['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    fileUpload.addEventListener(eventName, preventDefaults, false);
+});
+
+function preventDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
+}
+
+['dragenter', 'dragover'].forEach(eventName => {
+    fileUpload.addEventListener(eventName, () => fileUpload.style.borderColor = 'var(--primary)', false);
+});
+
+['dragleave', 'drop'].forEach(eventName => {
+    fileUpload.addEventListener(eventName, () => fileUpload.style.borderColor = 'var(--gray-300)', false);
+});
+
+fileUpload.addEventListener('drop', function(e) {
+    const files = e.dataTransfer.files;
+    if (files.length) {
+        document.getElementById('csv_file').files = files;
+        document.getElementById('file-name').innerHTML = '<i class="bi bi-file-earmark-check me-2"></i>' + files[0].name;
+    }
+});
+</script>
+{% endblock %}

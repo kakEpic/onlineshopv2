@@ -1,0 +1,83 @@
+{% extends 'client/base_client.html' %}
+
+{% block title %}{{ product.name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6">
+        {% if product.cover_image %}
+            <img src="{{ product.cover_image.file.url }}" class="img-fluid rounded shadow"
+                 id="mainImage" alt="{{ product.name }}">
+        {% else %}
+            <div class="bg-light text-center py-5 rounded">
+                <span class="text-muted">No Image</span>
+            </div>
+        {% endif %}
+
+        {% if product.images.count > 1 %}
+            <div class="row mt-3">
+                {% for img in product.images %}
+                    <div class="col-3">
+                        <img src="{{ img.file.url }}" class="img-thumbnail"
+                             style="cursor: pointer;"
+                             onclick="document.getElementById('mainImage').src='{{ img.file.url }}'"
+                             alt="">
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% if product.cover_video %}
+            <div class="mt-3">
+                <video controls class="w-100 rounded">
+                    <source src="{{ product.cover_video.file.url }}">
+                </video>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="col-md-6">
+        <h2>{{ product.name }}</h2>
+        <p class="text-muted">{{ product.category.name }}</p>
+
+        {% if product.is_new_arrival %}<span class="badge bg-success">New</span>{% endif %}
+        {% if product.is_featured %}<span class="badge bg-warning text-dark">Featured</span>{% endif %}
+
+        <hr>
+
+        <div class="card mb-3">
+            <div class="card-body">
+                <h6 class="text-muted mb-2">លក់​រាយ {% if product.retail_sale_type %}<small>({{ product.retail_sale_type }})</small>{% endif %}</h6>
+                {% if product.is_discount_active %}
+                    <span class="text-decoration-line-through text-muted h5">${{ product.price_retail }}</span>
+                    <span class="h3 text-danger ms-2">${{ product.discount_price }}</span>
+                    <span class="badge bg-danger">-{{ product.discount_percentage }}%</span>
+                {% else %}
+                    <span class="h3">${{ product.price_retail }}</span>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if product.price_wholesale %}
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h6 class="text-muted mb-2">លក់​ដុំ {% if product.wholesale_sale_type %}<small>({{ product.wholesale_sale_type }})</small>{% endif %}</h6>
+                    <span class="h4">${{ product.price_wholesale }}</span>
+                </div>
+            </div>
+        {% endif %}
+
+        {% if product.barcode %}
+            <p><small class="text-muted">Barcode: {{ product.barcode }}</small></p>
+        {% endif %}
+
+        {% if product.description %}
+            <hr>
+            <h5>Description</h5>
+            <div>{{ product.description|safe }}</div>
+        {% endif %}
+
+        <a href="{% url 'products:list' %}" class="btn btn-secondary mt-3">← Back to Products</a>
+    </div>
+</div>
+{% endblock %}

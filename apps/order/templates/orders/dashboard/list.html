@@ -1,0 +1,163 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Orders" %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <i class="bi bi-bag me-2"></i>{% trans "Orders" %}
+        </h1>
+    </div>
+
+    <!-- Status Filter -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body py-2">
+            <div class="d-flex flex-wrap gap-2">
+                <a href="{% url 'orders:dashboard_list' %}"
+                   class="btn btn-sm {% if not current_status %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                    {% trans "All" %}
+                </a>
+                {% for value, label in status_choices %}
+                <a href="?status={{ value }}"
+                   class="btn btn-sm {% if current_status == value %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                    {{ label }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Orders Table -->
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>{% trans "Invoice" %}</th>
+                            <th>{% trans "Customer" %}</th>
+                            <th>{% trans "Phone" %}</th>
+                            <th>{% trans "Date" %}</th>
+                            <th class="text-end">{% trans "Total" %}</th>
+                            <th class="text-center">{% trans "Status" %}</th>
+                            <th style="width: 150px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'orders:dashboard_detail' order.pk %}" class="fw-semibold text-decoration-none">
+                                    {{ order.invoice_no }}
+                                </a>
+                            </td>
+                            <td>
+                                {{ order.customer.name }}
+                                {% if order.user %}
+                                <span class="badge bg-info ms-1" title="{% trans 'Registered User' %}">
+                                    <i class="bi bi-person-check"></i>
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>{{ order.customer.phone }}</td>
+                            <td>{{ order.order_date|date:"M d, Y H:i" }}</td>
+                            <td class="text-end fw-semibold">${{ order.total }}</td>
+                            <td class="text-center">
+                                <select class="form-select form-select-sm status-select" 
+                                        data-order-id="{{ order.pk }}"
+                                        style="width: auto;">
+                                    {% for value, label in status_choices %}
+                                    <option value="{{ value }}" {% if order.status == value %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td>
+                                <a href="{% url 'orders:dashboard_detail' order.pk %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye me-1"></i>{% trans "View" %}
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">
+                                {% trans "No orders found" %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?{% if current_status %}status={{ current_status }}&{% endif %}page={{ page_obj.previous_page_number }}">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+            </li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+            <li class="page-item">
+                <a class="page-link" href="?{% if current_status %}status={{ current_status }}&{% endif %}page={{ num }}">{{ num }}</a>
+            </li>
+            {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?{% if current_status %}status={{ current_status }}&{% endif %}page={{ page_obj.next_page_number }}">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Status change handler
+    document.querySelectorAll('.status-select').forEach(function(select) {
+        select.addEventListener('change', function() {
+            const orderId = this.dataset.orderId;
+            const newStatus = this.value;
+
+            const formData = new FormData();
+            formData.append('status', newStatus);
+            formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+            fetch(`/orders/dashboard/${orderId}/status/`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success toast or notification
+                    console.log('Status updated:', data.status_display);
+                }
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,364 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Products Dashboard{% endblock %}
+
+{% block content %}
+<!-- Dashboard Header -->
+<div class="dashboard-header">
+    <div>
+        <h1 class="dashboard-title"><i class="bi bi-box-seam me-2"></i>Products</h1>
+        <p class="dashboard-subtitle">Manage your product inventory</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'products:csv_import' %}" class="btn btn-success">
+            <i class="bi bi-upload me-2"></i>Import CSV
+        </a>
+        <a href="{% url 'products:dashboard_add' %}" class="btn btn-outline-success">
+            <i class="bi bi-plus-circle me-2"></i>Create Product
+        </a>
+        <a href="{% url 'products:dashboard_category_list' %}" class="btn btn-outline-primary">
+            <i class="bi bi-folder me-2"></i>Categories
+        </a>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="stats-grid">
+    <div class="stat-card" style="animation-delay: 0ms;">
+        <div class="icon-box primary">
+            <i class="bi bi-box-seam"></i>
+        </div>
+        <div>
+            <div class="stat-value">{{ page_obj.paginator.count }}</div>
+            <div class="stat-label">Total Products</div>
+        </div>
+    </div>
+    <div class="stat-card" style="animation-delay: 100ms;">
+        <div class="icon-box success">
+            <i class="bi bi-eye"></i>
+        </div>
+        <div>
+            <div class="stat-value">{% with visible_count=products|length %}{{ visible_count }}{% endwith %}</div>
+            <div class="stat-label">Filtered Results</div>
+        </div>
+    </div>
+    <div class="stat-card" style="animation-delay: 200ms;">
+        <div class="icon-box warning">
+            <i class="bi bi-star"></i>
+        </div>
+        <div>
+            <div class="stat-value">-</div>
+            <div class="stat-label">Featured</div>
+        </div>
+    </div>
+    <div class="stat-card" style="animation-delay: 300ms;">
+        <div class="icon-box info">
+            <i class="bi bi-tags"></i>
+        </div>
+        <div>
+            <div class="stat-value">-</div>
+            <div class="stat-label">On Sale</div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters Card -->
+<div class="data-card mb-4">
+    <div class="data-card-header">
+        <span class="data-card-title"><i class="bi bi-funnel me-2"></i>Filters</span>
+    </div>
+    <div class="p-4">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-5">
+                <label class="form-label">Search</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                    <input type="text" name="q" class="form-control" placeholder="Search by name, handle..." value="{{ search_query }}">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Visibility</label>
+                <select name="visibility" class="form-select">
+                    <option value="">All Products</option>
+                    <option value="visible" {% if visibility == 'visible' %}selected{% endif %}>
+                        <i class="bi bi-eye"></i> Visible to Client
+                    </option>
+                    <option value="hidden" {% if visibility == 'hidden' %}selected{% endif %}>
+                        <i class="bi bi-eye-slash"></i> Hidden
+                    </option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-grow-1">
+                        <i class="bi bi-search me-1"></i>Apply
+                    </button>
+                    <a href="{% url 'products:dashboard_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-lg"></i>
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Products Table -->
+<div class="data-card">
+    <div class="data-card-header">
+        <span class="data-card-title">
+            <i class="bi bi-list-ul me-2"></i>Products List
+            <span class="badge bg-primary ms-2">{{ page_obj.paginator.count }}</span>
+        </span>
+    </div>
+    
+    {% if products %}
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Category</th>
+                    <th>Retail Price</th>
+                    <th>Discount</th>
+                    <th>Wholesale</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in products %}
+                <tr class="animate-fade-in" style="animation-delay: {{ forloop.counter0 }}0ms;">
+                    <td>
+                        <div class="product-cell">
+                            <!-- Media Display with Conditions -->
+                            {% if product.cover_thumbnail_url or product.cover_video %}
+                                <!-- Condition 1 & 3: Has images (with or without video) -->
+                                {% if product.cover_thumbnail_url %}
+                                    <img src="{{ product.cover_thumbnail_url }}"
+                                         class="product-thumb thumb-clickable"
+                                         alt="{{ product.name }}"
+                                         data-name="{{ product.name }}"
+                                         data-media-type="image"
+                                         {% if product.cover_video %}data-video="{{ product.cover_video.file.url }}"{% endif %}
+                                         onclick="openMediaModal(this)"
+                                         style="cursor:zoom-in;">
+                                <!-- Condition 2: Only video available (no images) -->
+                                {% elif product.cover_video %}
+                                    <div class="product-thumb d-flex align-items-center justify-content-center bg-dark border rounded-2 position-relative thumb-clickable"
+                                         data-name="{{ product.name }}"
+                                         data-video="{{ product.cover_video.file.url }}"
+                                         data-media-type="video"
+                                         onclick="openMediaModal(this)"
+                                         style="cursor:zoom-in; background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);">
+                                        <div class="position-absolute top-50 start-50 translate-middle">
+                                            <i class="bi bi-play-circle-fill text-white" style="font-size: 3rem;"></i>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            {% else %}
+                                <!-- Condition 1: No media available -->
+                                <div class="product-thumb d-flex align-items-center justify-content-center bg-light border rounded-2">
+                                    <i class="bi bi-image text-secondary" style="font-size: 1.5rem;"></i>
+                                </div>
+                            {% endif %}
+                            <div>
+                                <div class="product-name">{{ product.name|truncatechars:40 }}</div>
+                                <div class="product-sku">{{ product.handle }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge bg-light text-dark">{{ product.category.name }}</span>
+                    </td>
+                    <td>
+                        {% if product.is_discount_active %}
+                        <span class="text-muted text-decoration-line-through small">${{ product.price_retail }}</span>
+                        <strong class="text-success d-block">${{ product.final_retail_price }}</strong>
+                        {% else %}
+                        <strong class="text-primary">${{ product.price_retail }}</strong>
+                        {% endif %}
+                        {% if product.retail_sale_type %}
+                        <small class="text-muted d-block">{{ product.retail_sale_type }}</small>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if product.discount_price %}
+                            {% if product.is_forever_discount %}
+                            <span class="badge bg-danger">
+                                <i class="bi bi-infinity me-1"></i>-{{ product.discount_percentage }}%
+                            </span>
+                            <small class="d-block text-success mt-1">${{ product.discount_price }} អចិន្ត្រៃយ៍</small>
+                            {% elif product.is_discount_active %}
+                            <span class="badge bg-danger">
+                                <i class="bi bi-tag-fill me-1"></i>-{{ product.discount_percentage }}%
+                            </span>
+                            <small class="d-block text-muted mt-1">
+                                {{ product.discount_end_date|date:"d/m/Y" }}
+                            </small>
+                            {% else %}
+                            <span class="badge bg-secondary">
+                                <i class="bi bi-clock me-1"></i>{{ product.discount_percentage }}% (inactive)
+                            </span>
+                            {% endif %}
+                        {% else %}
+                        <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if product.price_wholesale %}
+                        <strong>${{ product.price_wholesale }}</strong>
+                        {% if product.wholesale_sale_type %}
+                        <small class="text-muted d-block">{{ product.wholesale_sale_type }}</small>
+                        {% endif %}
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="d-flex flex-column gap-1">
+                            {% if product.is_visible_to_client %}
+                            <span class="status-badge visible">Visible</span>
+                            {% else %}
+                            <span class="status-badge hidden">Hidden</span>
+                            {% endif %}
+                            
+                            {% if product.is_featured %}
+                            <span class="badge bg-warning text-dark"><i class="bi bi-star-fill me-1"></i>Featured</span>
+                            {% endif %}
+                            
+                            {% if product.is_new_arrival %}
+                            <span class="badge bg-success"><i class="bi bi-stars me-1"></i>New</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="d-flex gap-2">
+                            <a href="{% url 'products:detail' product.slug %}" class="btn btn-icon" title="View" target="_blank">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="{% url 'products:dashboard_edit' product.pk %}" class="btn btn-icon edit" title="Edit">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <a href="{% url 'products:dashboard_delete' product.pk %}" class="btn btn-icon delete" title="Delete">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <div class="p-4 border-top">
+        <div class="d-flex justify-content-between align-items-center">
+            <span class="text-muted">
+                Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ page_obj.paginator.count }}
+            </span>
+            <nav aria-label="Products pagination">
+                <ul class="pagination mb-0">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if visibility %}&visibility={{ visibility }}{% endif %}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% if search_query %}&q={{ search_query }}{% endif %}{% if visibility %}&visibility={{ visibility }}{% endif %}">{{ num }}</a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if visibility %}&visibility={{ visibility }}{% endif %}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+    {% endif %}
+    
+    {% else %}
+    <!-- Empty State -->
+    <div class="empty-state">
+        <i class="bi bi-inbox"></i>
+        <h3>No products found</h3>
+        <p>Try adjusting your filters or import products via CSV.</p>
+        <a href="{% url 'products:csv_import' %}" class="btn btn-primary">
+            <i class="bi bi-upload me-2"></i>Import Products
+        </a>
+        
+    </div>
+    {% endif %}
+</div>
+
+<!-- Media Lightbox Modal -->
+<div class="modal fade" id="mediaModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content bg-dark border-0">
+            <div class="modal-header border-0 pb-0">
+                <h6 class="modal-title text-white" id="mediaModalTitle"></h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center p-3" id="mediaModalBody"></div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    /**
+     * Open media modal with conditional display
+     * Condition 1: No media - not clickable (this function won't be called)
+     * Condition 2: Single video - displays video in lightbox
+     * Condition 3: Both image & video - displays image or video based on click
+     * @param {HTMLElement} element - The clicked media element
+     */
+    function openMediaModal(element) {
+        const name = element.dataset.name || '';
+        const videoSrc = element.dataset.video || '';
+        const mediaType = element.dataset.mediaType || 'image';
+
+        document.getElementById('mediaModalTitle').textContent = name;
+
+        const body = document.getElementById('mediaModalBody');
+
+        // Determine what to display based on media type and conditions
+        if (mediaType === 'video') {
+            // Condition 2: Single video only
+            body.innerHTML = `
+                <video controls autoplay class="rounded-3 w-100" style="max-height:75vh;">
+                    <source src="${videoSrc}">
+                </video>
+            `;
+        } else if (mediaType === 'image') {
+            // Condition 3: Has images (display image)
+            body.innerHTML = `<img src="${element.src}" class="rounded-3 img-fluid" style="max-height:80vh;" alt="${name}">`;
+        }
+
+        new bootstrap.Modal(document.getElementById('mediaModal')).show();
+
+        // Stop video and clear content when modal closes
+        const modalElement = document.getElementById('mediaModal');
+        const handleHidden = function() {
+            body.innerHTML = '';
+            modalElement.removeEventListener('hidden.bs.modal', handleHidden);
+        };
+        modalElement.addEventListener('hidden.bs.modal', handleHidden);
+    }
+</script>
+{% endblock %}
+{% endblock %}

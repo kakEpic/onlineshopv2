@@ -1,0 +1,111 @@
+{% extends 'client/base_client.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Order" %} #{{ order.invoice_no }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'orders:my_orders' %}">{% trans "My Orders" %}</a></li>
+            <li class="breadcrumb-item active">{{ order.invoice_no }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Order Info -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-receipt me-2"></i>{% trans "Order" %} #{{ order.invoice_no }}
+                    </h5>
+                    {% if order.status == 'pending' %}
+                    <span class="badge bg-warning text-dark">{{ order.get_status_display }}</span>
+                    {% elif order.status == 'paid' %}
+                    <span class="badge bg-success">{{ order.get_status_display }}</span>
+                    {% elif order.status == 'confirmed' %}
+                    <span class="badge bg-info">{{ order.get_status_display }}</span>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-sm-6 mb-3">
+                            <label class="text-muted small">{% trans "Order Date" %}</label>
+                            <p class="mb-0">{{ order.order_date|date:"F d, Y H:i" }}</p>
+                        </div>
+                        <div class="col-sm-6 mb-3">
+                            <label class="text-muted small">{% trans "Delivery Address" %}</label>
+                            <p class="mb-0">{{ order.shipping_address|default:"-" }}</p>
+                        </div>
+                    </div>
+                    {% if order.note %}
+                    <div class="mt-2">
+                        <label class="text-muted small">{% trans "Notes" %}</label>
+                        <p class="mb-0">{{ order.note }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Order Items -->
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-box me-2"></i>{% trans "Items" %}</h5>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>{% trans "Product" %}</th>
+                                <th class="text-center">{% trans "Price" %}</th>
+                                <th class="text-center">{% trans "Qty" %}</th>
+                                <th class="text-end">{% trans "Total" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for detail in order.details.all %}
+                            <tr>
+                                <td>
+                                    {% if detail.product %}
+                                    <a href="{{ detail.product.get_absolute_url }}" class="text-decoration-none">
+                                        {{ detail.product_name }}
+                                    </a>
+                                    {% else %}
+                                    {{ detail.product_name }}
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">${{ detail.price }}</td>
+                                <td class="text-center">{{ detail.qty }}</td>
+                                <td class="text-end">${{ detail.line_total }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Summary -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm " style="">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-calculator me-2"></i>{% trans "Summary" %}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>{% trans "Subtotal" %}:</span>
+                        <span>${{ order.subtotal }}</span>
+                    </div>
+                   
+                    <hr>
+                    <div class="d-flex justify-content-between">
+                        <span class="h5 mb-0">{% trans "Total" %}:</span>
+                        <span class="h5 mb-0 text-primary">${{ order.total }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,234 @@
+{% extends 'client/base_client.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "កន្រ្តកទំនិញ" %}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="h3 mb-4">
+        <i class="bi bi-cart3 me-2"></i>{% trans "កន្រ្តកទំនិញ" %}
+    </h1>
+
+    {% if cart_items %}
+    <div class="row">
+        <!-- Cart Items -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 100px;">{% trans "រូបភាព" %}</th>
+                                    <th>{% trans "ផលិតផល" %}</th>
+                                    <th class="text-center" style="width: 120px;">{% trans "តម្លៃ" %}</th>
+                                    <th class="text-center" style="width: 140px;">{% trans "ចំនួន" %}</th>
+                                    <th class="text-end" style="width: 120px;">{% trans "សរុប" %}</th>
+                                    <th style="width: 60px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in cart_items %}
+                                <tr id="cart-item-{{ item.product.id }}">
+                                    <td>
+                                        {% if item.product.cover_thumbnail_url %}
+                                        <img src="{{ item.product.cover_thumbnail_url }}"
+                                             alt="{{ item.product.name }}"
+                                             class="img-fluid rounded"
+                                             style="max-width: 80px; max-height: 80px; object-fit: cover;">
+                                        {% elif item.product.cover_image %}
+                                        <img src="{{ item.product.cover_image.file.url }}"
+                                             alt="{{ item.product.name }}"
+                                             class="img-fluid rounded"
+                                             style="max-width: 80px; max-height: 80px; object-fit: cover;">
+                                        {% else %}
+                                        <div class="bg-dark rounded d-flex align-items-center justify-content-center"
+                                             style="width: 80px; height: 80px;">
+                                            <i class="bi bi-play-circle-fill text-white fs-4"></i>
+                                        </div>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <h6 class="mb-1">
+                                            <a href="{{ item.product.get_absolute_url }}" class="text-decoration-none">
+                                                {{ item.product.name }}
+                                            </a>
+                                        </h6>
+                                        {% if item.product.barcode %}
+                                        <small class="text-muted">{{ item.product.barcode }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center align-middle">
+                                        {% if item.product.is_discount_active %}
+                                        <span class="fw-semibold text-success">${{ item.price }}</span>
+                                        <small class="d-block text-muted text-decoration-line-through">${{ item.product.price_retail }}</small>
+                                        <span class="badge bg-danger" style="font-size:0.65rem;">-{{ item.product.discount_percentage }}%</span>
+                                        {% else %}
+                                        <span class="fw-semibold">${{ item.price }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center align-middle">
+                                        <form action="{% url 'cart:update' item.product.id %}"
+                                              method="post"
+                                              class="d-inline-flex align-items-center cart-update-form">
+                                            {% csrf_token %}
+                                            <button type="button"
+                                                    class="btn btn-outline-secondary btn-sm qty-decrease"
+                                                    data-product-id="{{ item.product.id }}">
+                                                <i class="bi bi-dash"></i>
+                                            </button>
+                                            <input type="number"
+                                                   name="quantity"
+                                                   value="{{ item.quantity }}"
+                                                   min="0"
+                                                   class="form-control form-control-sm text-center mx-1 qty-input"
+                                                   style="width: 60px;"
+                                                   data-product-id="{{ item.product.id }}">
+                                            <button type="button"
+                                                    class="btn btn-outline-secondary btn-sm qty-increase"
+                                                    data-product-id="{{ item.product.id }}">
+                                                <i class="bi bi-plus"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                    <td class="text-end align-middle">
+                                        <span class="fw-bold item-total" id="item-total-{{ item.product.id }}">
+                                            ${{ item.total_price }}
+                                        </span>
+                                    </td>
+                                    <td class="align-middle">
+                                        <form action="{% url 'cart:remove' item.product.id %}"
+                                              method="post"
+                                              class="cart-remove-form">
+                                            {% csrf_token %}
+                                            <button type="submit"
+                                                    class="btn btn-outline-danger btn-sm"
+                                                    title="{% trans 'Remove' %}">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Continue Shopping & Clear Cart -->
+            <div class="d-flex justify-content-between">
+                <a href="{% url 'products:list' %}" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-left me-2"></i>{% trans "បន្តការទិញ" %}
+                </a>
+                <form action="{% url 'cart:clear' %}" method="post" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit"
+                            class="btn btn-outline-danger"
+                            onclick="return confirm('{% trans "តើអ្នកប្រាកដជាចង់សម្អាតកន្រ្តកមែន?" %}')">
+                        <i class="bi bi-trash me-2"></i>{% trans "សម្អាតកន្រ្តក" %}
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Cart Summary -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm " style="">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-receipt me-2"></i>{% trans "សរុបកន្រ្តក" %}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>{% trans "ទំនិញ" %}:</span>
+                        <span id="cart-item-count">{{ cart|length }}</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span class="h5 mb-0">{% trans "សរុប" %}:</span>
+                        <span class="h5 mb-0 text-primary" id="cart-total">${{ cart.get_total_price }}</span>
+                    </div>
+                    <a href="{% url 'cart:checkout' %}" class="btn btn-primary w-100 btn-lg">
+                        <i class="bi bi-bag-check me-2"></i>{% trans "បញ្ជាក់ការបញ្ជាទិញ" %}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- Empty Cart -->
+    <div class="text-center py-5">
+        <i class="bi bi-cart-x display-1 text-muted mb-4"></i>
+        <h4 class="text-muted mb-4">{% trans "កន្រ្តករបស់អ្នកទទេ" %}</h4>
+        <a href="{% url 'products:list' %}" class="btn btn-primary btn-lg">
+            <i class="bi bi-shop me-2"></i>{% trans "ចាប់ផ្តើមការទិញ" %}
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Quantity increase/decrease buttons
+    document.querySelectorAll('.qty-increase, .qty-decrease').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const productId = this.dataset.productId;
+            const input = document.querySelector(`.qty-input[data-product-id="${productId}"]`);
+            let value = parseInt(input.value) || 0;
+
+            if (this.classList.contains('qty-increase')) {
+                value++;
+            } else {
+                value = Math.max(0, value - 1);
+            }
+
+            input.value = value;
+            updateCart(productId, value);
+        });
+    });
+
+    // Quantity input change
+    document.querySelectorAll('.qty-input').forEach(function(input) {
+        input.addEventListener('change', function() {
+            const productId = this.dataset.productId;
+            const value = parseInt(this.value) || 0;
+            updateCart(productId, value);
+        });
+    });
+
+    function updateCart(productId, quantity) {
+        const formData = new FormData();
+        formData.append('quantity', quantity);
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+        fetch(`/cart/update/${productId}/`, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                if (quantity <= 0) {
+                    document.getElementById(`cart-item-${productId}`).remove();
+                } else {
+                    document.getElementById(`item-total-${productId}`).textContent = `$${data.item_total}`;
+                }
+                document.getElementById('cart-total').textContent = `$${data.cart_total}`;
+                document.getElementById('cart-item-count').textContent = data.cart_count;
+
+                // Reload if cart empty
+                if (data.cart_count === 0) {
+                    location.reload();
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

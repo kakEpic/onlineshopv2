@@ -1,0 +1,60 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load static %}
+
+{% block title %}{% if object %}Edit{% else %}Add{% endif %} Category{% endblock %}
+
+{% block content %}
+<!-- Dashboard Header -->
+<div class="dashboard-header">
+    <div>
+        <h1 class="dashboard-title">
+            <i class="bi bi-{% if object %}pencil-square{% else %}folder-plus{% endif %} me-2"></i>
+            {% if object %}Edit Category{% else %}Add New Category{% endif %}
+        </h1>
+        <p class="dashboard-subtitle">{% if object %}Update category details{% else %}Create a new product category{% endif %}</p>
+    </div>
+    <a href="{% url 'products:dashboard_category_list' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-2"></i>Back to Categories
+    </a>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="form-card">
+            <div class="text-center mb-4">
+                <div class="rounded-circle bg-primary bg-opacity-10 d-inline-flex align-items-center justify-content-center mb-3" 
+                     style="width: 80px; height: 80px;">
+                    <i class="bi bi-folder text-primary" style="font-size: 2.5rem;"></i>
+                </div>
+                <h4>{% if object %}{{ object.name }}{% else %}New Category{% endif %}</h4>
+            </div>
+            
+            <form method="post" novalidate>
+                {% csrf_token %}
+                
+                <div class="mb-4">
+                    <label for="{{ form.name.id_for_label }}" class="form-label">Category Name *</label>
+                    <input type="text" name="name" id="{{ form.name.id_for_label }}"
+                           class="form-control form-control-lg {% if form.name.errors %}is-invalid{% endif %}" 
+                           value="{{ form.name.value|default:'' }}" 
+                           placeholder="Enter category name"
+                           required autofocus>
+                    {% if form.name.errors %}
+                    <div class="invalid-feedback">{{ form.name.errors|join:", " }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="bi bi-check-lg me-2"></i>
+                        {% if object %}Save Changes{% else %}Create Category{% endif %}
+                    </button>
+                    <a href="{% url 'products:dashboard_category_list' %}" class="btn btn-outline-secondary">
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,200 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Order" %} #{{ order.invoice_no }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'orders:dashboard_list' %}">{% trans "Orders" %}</a></li>
+            <li class="breadcrumb-item active">{{ order.invoice_no }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <!-- Order Details -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-receipt me-2"></i>{% trans "Order" %} #{{ order.invoice_no }}
+                    </h5>
+                    <form action="{% url 'orders:update_status' order.pk %}" method="post" class="d-inline">
+                        {% csrf_token %}
+                        <div class="input-group input-group-sm">
+                            <label class="input-group-text">{% trans "Status" %}</label>
+                            <select name="status" class="form-select form-select-sm">
+                                {% for value, label in status_choices %}
+                                <option value="{{ value }}" {% if order.status == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="btn btn-primary btn-sm">{% trans "Update" %}</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <label class="text-muted small">{% trans "Order Date" %}</label>
+                            <p class="mb-0">{{ order.order_date|date:"F d, Y H:i" }}</p>
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="text-muted small">{% trans "Created At" %}</label>
+                            <p class="mb-0">{{ order.created_at|date:"F d, Y H:i" }}</p>
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="text-muted small">{% trans "Last Updated" %}</label>
+                            <p class="mb-0">{{ order.updated_at|date:"F d, Y H:i" }}</p>
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="text-muted small">{% trans "Current Status" %}</label>
+                            <p class="mb-0">
+                                {% if order.status == 'pending' %}
+                                <span class="badge bg-warning text-dark">{{ order.get_status_display }}</span>
+                                {% elif order.status == 'paid' %}
+                                <span class="badge bg-success">{{ order.get_status_display }}</span>
+                                {% elif order.status == 'confirmed' %}
+                                <span class="badge bg-info">{{ order.get_status_display }}</span>
+                                {% elif order.status == 'processing' %}
+                                <span class="badge bg-primary">{{ order.get_status_display }}</span>
+                                {% elif order.status == 'completed' %}
+                                <span class="badge bg-success">{{ order.get_status_display }}</span>
+                                {% elif order.status == 'cancelled' %}
+                                <span class="badge bg-danger">{{ order.get_status_display }}</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        {% if order.shipping_address %}
+                        <div class="col-12">
+                            <label class="text-muted small">{% trans "Shipping Address" %}</label>
+                            <p class="mb-0">{{ order.shipping_address }}</p>
+                        </div>
+                        {% endif %}
+                        {% if order.note %}
+                        <div class="col-12">
+                            <label class="text-muted small">{% trans "Order Notes" %}</label>
+                            <p class="mb-0">{{ order.note }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Items -->
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-box me-2"></i>{% trans "Order Items" %}</h5>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>{% trans "Product" %}</th>
+                                <th class="text-center">{% trans "Price" %}</th>
+                                <th class="text-center">{% trans "Qty" %}</th>
+                                <th class="text-center">{% trans "Discount" %}</th>
+                                <th class="text-end">{% trans "Total" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for detail in order.details.all %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% if detail.product %}
+                                        {% with thumb=detail.product.cover_thumbnail_url %}
+                                        {% if thumb %}
+                                        <img src="{{ thumb }}"
+                                             alt="{{ detail.product_name }}"
+                                             class="rounded me-2"
+                                             style="width: 50px; height: 50px; object-fit: cover;">
+                                        {% elif detail.product.cover_image %}
+                                        <img src="{{ detail.product.cover_image.file.url }}"
+                                             alt="{{ detail.product_name }}"
+                                             class="rounded me-2"
+                                             style="width: 50px; height: 50px; object-fit: cover;">
+                                        {% else %}
+                                        <div class="rounded me-2 bg-dark d-flex align-items-center justify-content-center flex-shrink-0"
+                                             style="width:50px;height:50px;">
+                                            <i class="bi bi-play-circle-fill text-white" style="font-size:1.3rem;"></i>
+                                        </div>
+                                        {% endif %}
+                                        {% endwith %}
+                                        {% endif %}
+                                        <div>
+                                            <h6 class="mb-0">{{ detail.product_name }}</h6>
+                                            {% if detail.product.barcode %}
+                                            <small class="text-muted">{{ detail.product.barcode }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="text-center align-middle">${{ detail.price }}</td>
+                                <td class="text-center align-middle">{{ detail.qty }}</td>
+                                <td class="text-center align-middle">${{ detail.discount }}</td>
+                                <td class="text-end align-middle fw-semibold">${{ detail.line_total }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot class="table-light">
+                            <tr>
+                                <td colspan="4" class="text-end"><strong>{% trans "Total" %}:</strong></td>
+                                <td class="text-end"><strong class="text-primary fs-5">${{ order.total }}</strong></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Customer Info -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm sticky-top" style="top: 20px;">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="bi bi-person me-2"></i>{% trans "Customer" %}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="text-muted small">{% trans "Name" %}</label>
+                        <p class="mb-0 fw-semibold">{{ order.customer.name }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="text-muted small">{% trans "Phone" %}</label>
+                        <p class="mb-0">
+                            <a href="tel:{{ order.customer.phone }}" class="text-decoration-none">
+                                <i class="bi bi-telephone me-1"></i>{{ order.customer.phone }}
+                            </a>
+                        </p>
+                    </div>
+                    {% if order.customer.telegram_phone %}
+                    <div class="mb-3">
+                        <label class="text-muted small">{% trans "Telegram" %}</label>
+                        <p class="mb-0">
+                            <i class="bi bi-telegram me-1"></i>{{ order.customer.telegram_phone }}
+                        </p>
+                    </div>
+                    {% endif %}
+                    {% if order.customer.address %}
+                    <div class="mb-3">
+                        <label class="text-muted small">{% trans "Address" %}</label>
+                        <p class="mb-0">{{ order.customer.address }}</p>
+                    </div>
+                    {% endif %}
+                    {% if order.user %}
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-person-check me-2"></i>
+                        {% trans "Registered User" %}: {{ order.user.email }}
+                    </div>
+                    {% else %}
+                    <div class="alert alert-secondary mb-0">
+                        <i class="bi bi-person me-2"></i>
+                        {% trans "Guest Checkout" %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
