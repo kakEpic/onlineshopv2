@@ -17,6 +17,16 @@ DATABASES = {
     }
 }
 
+ALLOWED_HOSTS = [
+    'onlineshopv2-cn8m6orwv-kakepics-projects.vercel.app',
+    'localhost',
+    '127.0.0.1',
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://onlineshopv2-cn8m6orwv-kakepics-projects.vercel.app',
+]
+
 # ---------- Security ----------
 SECURE_SSL_REDIRECT = True
 SESSION_COOKIE_SECURE = True
