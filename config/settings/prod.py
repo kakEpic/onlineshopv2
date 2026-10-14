@@ -18,13 +18,15 @@ DATABASES = {
 }
 
 ALLOWED_HOSTS = [
-    'onlineshopv2-cn8m6orwv-kakepics-projects.vercel.app',
-    'localhost',
-    '127.0.0.1',
+    host.strip()
+    for host in config('ALLOWED_HOSTS', default='').split(',')
+    if host.strip()
 ]
 
 CSRF_TRUSTED_ORIGINS = [
-    'https://onlineshopv2-cn8m6orwv-kakepics-projects.vercel.app',
+    origin.strip()
+    for origin in config('CSRF_TRUSTED_ORIGINS', default='').split(',')
+    if origin.strip()
 ]
 
 # ---------- Security ----------
