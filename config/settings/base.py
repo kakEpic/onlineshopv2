@@ -35,7 +35,15 @@ LOCAL_APPS = [
     'apps.payment',
 ]
 
-INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
+INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS + [
+    # Apps ដែលមានស្រាប់របស់អ្នក...
+
+
+    'cloudinary_storage',
+    'cloudinary',
+
+    # Apps ផ្សេងៗរបស់អ្នក...
+]
 
 # ---------- Middleware ----------
 MIDDLEWARE = [
