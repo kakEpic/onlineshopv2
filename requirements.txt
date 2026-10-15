@@ -3,7 +3,7 @@ attrs==26.1.0
 autobahn==26.6.1
 Automat==25.4.16
 bakong-khqr==0.6.0
-cbor2==6.1.2
+cbor2==5.7.0
 certifi==2026.5.20
 cffi==2.0.0
 channels==4.3.2
