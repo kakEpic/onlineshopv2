@@ -6,7 +6,7 @@
       "src": "api/index.py",
       "use": "@vercel/python",
       "config": {
-        "includeFiles": "staticfiles/**"
+        "excludeFiles": "{static/**,staticfiles/**,media/**,.build_venv/**,venv/**,__pycache__/**,tests/**,node_modules/**}"
       }
     },
     {
