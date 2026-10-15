@@ -56,21 +56,21 @@ SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
 
 # =========================
-# Static files - WhiteNoise
+
+# Static files - Vercel + WhiteNoise
+
 # =========================
+
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 STORAGES = {
-    'default': {
-        'BACKEND': 'django.core.files.storage.FileSystemStorage',
-    },
-    'staticfiles': {
-        'BACKEND': (
-            'whitenoise.storage.'
-            'CompressedManifestStaticFilesStorage'
-        ),
-    },
+'default': {
+'BACKEND': 'django.core.files.storage.FileSystemStorage',
+},
+'staticfiles': {
+'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage',
+},
 }
 
 # =========================
@@ -85,4 +85,3 @@ EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
-WHITENOISE_MANIFEST_STRICT = False
